@@ -1,0 +1,663 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>魔方 · 绿面朝下</title>
+<link href="https://cdn.jsdelivr.net/npm/daisyui@5" rel="stylesheet" type="text/css">
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+<style>
+  :root{
+    --color-base-100: #fcfcf8;
+    --color-base-200: #f0f1eb;
+    --color-base-300: #d8dad1;
+    --color-base-content: #111713;
+    --color-primary: #0d7a42;
+    --color-primary-content: #f7fff9;
+    --color-neutral: #1c2621;
+    --color-neutral-content: #f4f7f4;
+    --color-success: #0d7a42;
+    --color-success-content: #f7fff9;
+    --color-warning: #e0a010;
+    --color-warning-content: #2b1f00;
+    --radius-box: 1.25rem;
+    --radius-field: .7rem;
+    --radius-selector: .55rem;
+    --radius-card: 1.35rem;
+    --radius-pill: 999px;
+    --ink-soft: rgba(17,23,19,.56);
+    --line: rgba(17,23,19,.11);
+    --line-strong: rgba(17,23,19,.2);
+    --paper: #fcfcf8;
+    --paper-warm: #f3f3ec;
+  }
+  html,body{height:100%}
+  *{-webkit-tap-highlight-color:transparent}
+  body{
+    font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    background:
+      radial-gradient(circle at 12% 4%, rgba(13,122,66,.07), transparent 30rem),
+      radial-gradient(circle at 92% 10%, rgba(47,111,208,.055), transparent 26rem),
+      var(--color-base-200);
+    color:var(--color-base-content);
+  }
+  .mono{font-family:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace}
+  .display{font-family:"Songti SC","STSong","Noto Serif CJK SC",serif;font-weight:700}
+  .app-header{
+    position:relative;z-index:20;
+  }
+  .brand-mark{
+    display:grid;grid-template-columns:repeat(3,5px);grid-template-rows:repeat(3,5px);gap:2px;
+    padding:7px;border-radius:9px;background:var(--color-neutral);
+    box-shadow:0 1px 0 rgba(255,255,255,.22) inset,0 5px 18px rgba(17,23,19,.14);
+  }
+  .brand-mark i{border-radius:1.5px;background:#3b4a43}
+  .brand-mark i:nth-child(2),
+  .brand-mark i:nth-child(4){background:#2f6fd0}
+  .brand-mark i:nth-child(3),
+  .brand-mark i:nth-child(6),
+  .brand-mark i:nth-child(9){background:#d8322c}
+  .brand-mark i:nth-child(7),
+  .brand-mark i:nth-child(8){background:#eceeeb}
+  .brand-mark i:nth-child(5){background:#1f9d55}
+  .mode-switch{
+    display:flex;gap:3px;padding:4px;border:1px solid var(--line);
+    border-radius:999px;background:rgba(252,252,248,.7);
+    box-shadow:0 1px 0 rgba(255,255,255,.8) inset;
+    backdrop-filter:blur(12px);
+  }
+  .mode-btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:7px;
+    min-height:34px;padding:0 15px;border-radius:999px;
+    color:var(--ink-soft);font-size:12.5px;font-weight:650;letter-spacing:.02em;
+    transition:background .16s ease,color .16s ease,box-shadow .16s ease;
+  }
+  .mode-btn:hover{color:var(--color-base-content);background:rgba(255,255,255,.6)}
+  .mode-btn:focus-visible{outline:2px solid var(--color-primary);outline-offset:2px}
+  .mode-btn.is-active{
+    background:var(--color-neutral);color:var(--color-neutral-content);
+    box-shadow:0 2px 8px rgba(17,23,19,.16);
+  }
+  .mode-count{
+    display:inline-grid;place-items:center;min-width:22px;height:18px;padding:0 6px;
+    border-radius:999px;background:rgba(17,23,19,.08);
+    font:600 10px/1 ui-monospace,Menlo,monospace;
+  }
+  .mode-btn.is-active .mode-count{background:rgba(255,255,255,.16)}
+  button:focus:not(:focus-visible){outline:none!important;box-shadow:none}
+  .btn:focus:not(:focus-visible),
+  .filter-tab:focus:not(:focus-visible),
+  .net-btn:focus:not(:focus-visible),
+  .mode-btn:focus:not(:focus-visible),
+  .phase-card:focus:not(:focus-visible),
+  .f2l-guide summary:focus:not(:focus-visible){outline:none!important}
+  .modal-box:focus,
+  dialog:focus{outline:none!important}
+  .btn:focus-visible,
+  .filter-tab:focus-visible,
+  .net-btn:focus-visible,
+  .mode-btn:focus-visible,
+  .case-card:focus-visible{
+    outline:2px solid rgba(13,122,66,.58);outline-offset:2px;
+  }
+  .btn{
+    border-radius:var(--radius-pill);
+    border-color:var(--line);
+    box-shadow:0 1px 0 rgba(255,255,255,.72) inset;
+    font-weight:650;
+  }
+  .btn:hover{
+    border-color:var(--line-strong);
+    box-shadow:0 5px 16px rgba(17,23,19,.06);
+  }
+  .btn:active{transform:translateY(1px)}
+  .select,.toggle,.progress{border-radius:var(--radius-pill)}
+  .stage-shell{
+    position:relative;isolation:isolate;overflow:hidden;
+    border:1px solid var(--line);border-radius:var(--radius-card);
+    background:
+      linear-gradient(rgba(17,23,19,.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(17,23,19,.035) 1px, transparent 1px),
+      radial-gradient(circle at 50% 62%, #fff 0, #fbfbf6 58%, #f4f4ed 100%);
+    background-size:34px 34px,34px 34px,auto;
+    box-shadow:0 1px 0 rgba(255,255,255,.85) inset,0 24px 60px rgba(27,35,30,.08);
+  }
+  #stage{position:absolute;inset:0;z-index:1;display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+  #stage.grabbing{cursor:grabbing}
+  .stage-topbar{
+    position:absolute;z-index:3;inset:18px 18px auto 18px;
+    display:flex;align-items:flex-start;justify-content:space-between;gap:12px;
+    pointer-events:none;
+  }
+  .stage-chip{
+    display:inline-flex;align-items:center;gap:7px;
+    min-height:30px;padding:0 11px;border:1px solid var(--line);
+    border-radius:999px;background:rgba(252,252,248,.82);
+    color:var(--ink-soft);font-size:11px;font-weight:600;
+    backdrop-filter:blur(10px);
+  }
+  button.stage-chip{cursor:pointer}
+  .stage-chip b{color:var(--color-base-content);font-family:ui-monospace,Menlo,monospace;font-weight:600}
+  .stage-chip.is-solved{color:var(--color-primary)}
+  .stage-chip.is-solved .inline-block{background:var(--color-primary)}
+  .stage-chip.is-scrambled{color:#9a6200}
+  .stage-chip.is-scrambled .inline-block{background:var(--color-warning)}
+  .stage-hints{
+    display:none;gap:6px;flex-wrap:wrap;justify-content:flex-end;
+  }
+  .stage-bottom{
+    position:absolute;z-index:3;inset:auto 18px 18px 18px;
+    display:flex;align-items:flex-end;justify-content:space-between;gap:12px;
+    pointer-events:none;
+  }
+  .axis-legend{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:4px;width:132px;
+    padding:8px;border:1px solid var(--line);border-radius:16px;
+    background:rgba(252,252,248,.78);backdrop-filter:blur(10px);
+  }
+  .axis-legend span{display:flex;align-items:center;gap:4px;font:600 9px/1 ui-monospace,Menlo,monospace;color:var(--ink-soft)}
+  .axis-legend i{width:6px;height:6px;border-radius:2px}
+  .control-rail{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;min-width:0}
+  @media (max-width:1023px){
+    .control-rail{grid-template-columns:minmax(0,1.45fr) minmax(220px,1fr);align-items:start}
+    .control-rail > .panel:nth-child(2){grid-row:span 2}
+  }
+  @media (max-width:680px){
+    .control-rail{grid-template-columns:minmax(0,1fr)}
+  }
+  .panel{
+    border:1px solid var(--line);border-radius:var(--radius-box);
+    background:rgba(252,252,248,.86);
+    box-shadow:0 1px 0 rgba(255,255,255,.9) inset,0 10px 28px rgba(17,23,19,.035);
+  }
+  .panel-head{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    margin-bottom:14px;
+  }
+  .panel-kicker{
+    font:600 10px/1 ui-monospace,Menlo,monospace;letter-spacing:.16em;
+    color:var(--ink-soft);text-transform:uppercase;
+  }
+  .segmented{
+    display:flex;gap:2px;padding:3px;border-radius:var(--radius-pill);background:var(--color-base-200);
+  }
+  .segmented .btn{
+    min-height:27px;height:27px;padding:0 11px;border:0;border-radius:var(--radius-pill);
+    background:transparent;box-shadow:none;font-size:10.5px;color:var(--ink-soft);
+  }
+  .segmented .btn:hover{background:rgba(255,255,255,.55);color:var(--color-base-content)}
+  .segmented .btn.btn-neutral{background:var(--color-neutral);color:var(--color-neutral-content);box-shadow:0 2px 6px rgba(17,23,19,.12)}
+  .net-btn{
+    position:relative;
+    display:grid;place-items:center;
+    aspect-ratio:1;
+    min-height:0;
+    border-radius:1rem;
+    border:1px solid var(--line);
+    background:linear-gradient(180deg,#fff 0,#fafaf5 100%);
+    font:700 15px/1 ui-monospace,Menlo,monospace;
+    letter-spacing:.04em;
+    box-shadow:0 1px 0 rgba(255,255,255,.9) inset,0 3px 10px rgba(17,23,19,.035);
+    transition:transform .12s ease,box-shadow .12s ease,border-color .12s ease;
+  }
+  .net-btn:hover{border-color:var(--line-strong);transform:translateY(-1px);box-shadow:0 8px 20px rgba(17,23,19,.08)}
+  .turn-net > .net-btn{max-height:84px}
+  .net-btn:active{transform:translateY(1px)}
+  .net-btn:focus-visible{outline:2px solid var(--color-primary);outline-offset:2px}
+  .net-btn .swatch{
+    position:absolute;left:50%;bottom:7px;transform:translateX(-50%);
+    width:20px;height:3px;border-radius:999px;
+  }
+  .net-btn .cap{position:absolute;left:8px;top:6px;font:600 8px/1 ui-monospace,Menlo,monospace;opacity:.36;letter-spacing:.08em}
+  .log{display:flex;flex-wrap:wrap;gap:4px;min-height:26px}
+  .log span{
+    font-family:ui-monospace,Menlo,monospace;font-size:11.5px;line-height:1;
+    padding:5px 8px;border-radius:var(--radius-pill);
+    background:var(--color-base-200);color:var(--color-base-content);
+  }
+  .log span.is-last{background:var(--color-neutral);color:var(--color-neutral-content)}
+  .tok{
+    font-family:ui-monospace,Menlo,monospace;font-size:12px;line-height:1;
+    padding:6px 9px;border-radius:var(--radius-pill);
+    background:var(--color-base-100);border:1px solid var(--line);
+    transition:background .12s ease,color .12s ease,border-color .12s ease;
+  }
+  .tok.is-now{background:var(--color-neutral);border-color:var(--color-neutral);color:var(--color-neutral-content)}
+  .tok.is-past{opacity:.4}
+  .dialog-player .tok{padding:4px 7px;font-size:10.5px}
+  .dialog-player .kbd{height:1.35rem;min-height:1.35rem;font-size:9px}
+  .case-card{
+    position:relative;overflow:hidden;
+    border:1px solid var(--line);border-radius:1.25rem;
+    background:linear-gradient(180deg,rgba(255,255,255,.72),rgba(250,250,245,.9));
+    transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease,background .16s ease;
+  }
+  .case-card::after{
+    content:"";position:absolute;inset:auto 0 0 0;height:2px;
+    background:var(--color-primary);transform:scaleX(0);transform-origin:left;
+    transition:transform .18s ease;
+  }
+  .case-card:hover{transform:translateY(-3px);border-color:var(--line-strong);box-shadow:0 16px 34px rgba(17,23,19,.09)}
+  .case-card:hover::after{transform:scaleX(1)}
+  .case-card:focus-visible{outline:2px solid var(--color-primary);outline-offset:3px}
+  .case-done{
+    position:absolute;z-index:2;right:9px;top:9px;
+    display:grid;place-items:center;width:20px;height:20px;
+    border-radius:999px;background:var(--color-primary);color:#fff;
+    box-shadow:0 2px 7px rgba(13,122,66,.25);
+  }
+  .case-done[hidden]{display:none}
+  .case-visual{
+    background:
+      radial-gradient(circle at 50% 54%, rgba(255,255,255,.96) 0, rgba(255,255,255,.4) 54%, transparent 72%),
+      radial-gradient(ellipse at 50% 100%, rgba(13,122,66,.1), transparent 55%);
+  }
+  .filter-bar{
+    position:sticky;top:10px;z-index:12;
+    display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+    margin:0 -4px 14px;padding:7px;border:1px solid var(--line);border-radius:var(--radius-pill);
+    background:rgba(252,252,248,.84);backdrop-filter:blur(14px);
+    box-shadow:0 8px 24px rgba(17,23,19,.045);
+  }
+  .filter-tabs{display:flex;align-items:center;gap:3px;flex-wrap:wrap}
+  .filter-tab{
+    display:inline-flex;align-items:center;gap:6px;
+    min-height:34px;padding:0 13px;border-radius:var(--radius-pill);
+    color:var(--ink-soft);font-size:11.5px;font-weight:600;
+    transition:background .14s ease,color .14s ease;
+  }
+  .filter-tab:hover{background:var(--color-base-200);color:var(--color-base-content)}
+  .filter-tab:focus-visible{outline:2px solid var(--color-primary);outline-offset:2px}
+  .filter-tab.is-active{background:var(--color-neutral);color:var(--color-neutral-content)}
+  .filter-tab span{
+    min-width:17px;text-align:center;font:600 9.5px/1 ui-monospace,Menlo,monospace;
+    opacity:.58;
+  }
+  .filter-tab.is-active span{opacity:.72}
+  .group-dot{width:6px;height:6px;border-radius:999px;background:currentColor;opacity:.55}
+  .f2l-guide{
+    overflow:hidden;border:1px solid var(--line);border-radius:var(--radius-box);
+    background:rgba(252,252,248,.7);
+  }
+  .f2l-guide summary{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    padding:13px 15px;cursor:pointer;list-style:none;
+  }
+  .f2l-guide summary::-webkit-details-marker{display:none}
+  .f2l-guide summary::after{
+    content:"展开";flex:none;padding:5px 10px;border-radius:var(--radius-pill);
+    background:var(--color-base-200);font-size:10.5px;color:var(--ink-soft);
+  }
+  .f2l-guide[open] summary::after{content:"收起"}
+  .f2l-guide-grid{
+    display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;
+    padding:0 12px 12px;
+  }
+  .guide-step{
+    min-width:0;padding:13px;border-radius:1rem;
+    background:linear-gradient(145deg,rgba(255,255,255,.86),rgba(240,241,235,.66));
+    border:1px solid rgba(17,23,19,.075);
+  }
+  .guide-step strong{display:block;margin-top:8px;font-size:12.5px}
+  .guide-step p{margin-top:4px;font-size:11px;line-height:1.6;color:var(--ink-soft)}
+  .guide-index{
+    display:grid;place-items:center;width:24px;height:24px;border-radius:9px;
+    background:var(--color-neutral);color:var(--color-neutral-content);
+    font:600 10px/1 ui-monospace,Menlo,monospace;
+  }
+  .teach-block{padding:12px 13px;border-radius:1rem;background:rgba(255,255,255,.48);border:1px solid var(--line)}
+  .teach-label{font:600 9.5px/1 ui-monospace,Menlo,monospace;letter-spacing:.13em;color:var(--color-primary);text-transform:uppercase}
+  .teach-copy{margin-top:7px;font-size:11.5px;line-height:1.65;color:var(--ink-soft)}
+  .phase-card{
+    width:100%;padding:10px 11px;border:1px solid transparent;border-radius:.9rem;
+    text-align:left;background:transparent;transition:background .15s ease,border-color .15s ease;
+  }
+  .phase-card:hover{background:rgba(240,241,235,.8)}
+  .phase-card.is-current{background:rgba(13,122,66,.075);border-color:rgba(13,122,66,.18)}
+  .phase-card strong{display:flex;align-items:center;gap:7px;font-size:11.5px}
+  .phase-card span{display:block;margin-top:4px;font-size:10.5px;line-height:1.55;color:var(--ink-soft)}
+  .phase-dot{width:6px;height:6px;flex:none;border-radius:999px;background:var(--line-strong)}
+  .phase-card.is-current .phase-dot{background:var(--color-primary);box-shadow:0 0 0 3px rgba(13,122,66,.12)}
+  .dialog-title{font-size:25px;line-height:1.08}
+  .dialog-shell{
+    display:grid;grid-template-rows:auto minmax(0,1fr);overflow:hidden;
+    width:min(920px,100vw - 2rem);height:min(720px,92dvh);
+    border:1px solid rgba(255,255,255,.7);border-radius:1.6rem;
+    background:var(--paper);box-shadow:0 30px 90px rgba(17,23,19,.24);
+    translate:0 0;scale:1;opacity:1;
+  }
+  .dialog-shell > div:focus,
+  .dialog-shell:focus{outline:none}
+  .f2l-modal{
+    width:100%;max-width:none;height:100%;max-height:none;margin:0;padding:0;
+    border:0;background:transparent;color:inherit;overflow:hidden;
+    position:fixed;inset:0;
+  }
+  .f2l-modal[open]{display:grid;place-items:center}
+  .f2l-modal > .dialog-shell{grid-area:1/1}
+  .dialog-backdrop{
+    grid-area:1/1;place-self:stretch;display:grid;z-index:-1;
+    opacity:0;pointer-events:none;
+  }
+  .f2l-modal::backdrop{background:rgba(17,23,19,.42)}
+  .f2l-modal[open] .dialog-shell{
+    animation:modal-in .2s cubic-bezier(.22,.8,.35,1);
+  }
+  .dialog-stage{min-height:320px}
+  .dialog-layout{min-height:0}
+  .dialog-side{display:flex;min-width:0;flex-direction:column;gap:10px}
+  .dialog-scroll{
+    flex:1 1 auto;min-height:0;overflow-y:auto;
+    overscroll-behavior:contain;padding-right:2px;
+  }
+  .dialog-player{
+    flex:none;background:rgba(252,252,248,.96);padding:10px;
+    box-shadow:0 -8px 24px rgba(17,23,19,.045);
+  }
+  .dialog-player [data-role="tokens"]{min-height:24px}
+  .dialog-player [data-role="phase-hint"]{
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+    overflow:hidden;min-height:0;
+  }
+  @media (max-width:1023px){
+    .f2l-guide-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  }
+  @media (max-width:640px){
+    .f2l-guide-grid{grid-template-columns:minmax(0,1fr)}
+    .filter-bar{border-radius:1.25rem}
+    .filter-tabs{width:100%}
+    .filter-tab{min-height:32px;padding:0 10px;font-size:11px}
+  }
+  @media (max-width:767px){
+    .f2l-guide-grid{grid-template-columns:minmax(0,1fr)}
+    .dialog-title{font-size:22px}
+    #f2lDialog[open]{place-items:stretch}
+    .dialog-shell{
+      width:100%;max-width:100%;height:100dvh;border:0;border-radius:0;
+      grid-template-rows:minmax(0,1fr);
+    }
+    .dialog-shell > div{
+      padding:calc(10px + env(safe-area-inset-top)) 14px
+        calc(16px + env(safe-area-inset-bottom));
+      overflow-y:auto;-webkit-overflow-scrolling:touch;
+    }
+    .dialog-head{flex:none}
+    .dialog-layout{
+      display:flex;flex:none;flex-direction:column;gap:12px;
+      overflow:visible;padding-bottom:0;
+    }
+    .dialog-layout > .stage-shell{flex:none;height:clamp(190px,27dvh,240px);min-height:0}
+    .dialog-side{display:flex;flex:none;min-height:0;overflow:visible;gap:8px}
+    .dialog-scroll{
+      display:flex;flex:none;overflow:visible;padding-right:0;
+    }
+    .dialog-player{
+      position:relative;inset:auto;z-index:auto;border:1px solid var(--line);
+      background:rgba(252,252,248,.97);padding-top:8px;
+      box-shadow:0 10px 26px rgba(17,23,19,.055);
+    }
+    .dialog-side .teach-block{padding:10px 12px}
+    .dialog-side .teach-copy{font-size:10.5px;line-height:1.55}
+    .dialog-side .teach-block.mt-2{margin-top:6px}
+    .dialog-side .phase-card{padding:7px 8px}
+    .dialog-side .phase-card span{font-size:10px}
+    .dialog-side .teach-label{font-size:9px}
+    .dialog-player .tok{padding:4px 7px;font-size:10px}
+    .dialog-player [data-role="phase-hint"]{
+      display:block;min-height:0;padding:7px 10px;
+      white-space:nowrap;text-overflow:ellipsis;
+    }
+    .dialog-shell > div > p:last-child{display:block;margin-top:10px;padding:0 4px 4px}
+  }
+  .f2l-section{
+    border:1px solid var(--line);border-radius:var(--radius-card);
+    background:
+      radial-gradient(circle at 90% 0%, rgba(47,111,208,.055), transparent 28rem),
+      rgba(252,252,248,.78);
+    box-shadow:0 1px 0 rgba(255,255,255,.9) inset;
+  }
+  @keyframes modal-in{from{opacity:0;transform:translateY(12px) scale(.985)}to{opacity:1;transform:none}}
+  @media (min-width:960px){
+    .stage-hints{display:flex}
+  }
+  @media (max-width:640px){
+    .stage-topbar{inset:12px 12px auto 12px}
+    .stage-bottom{inset:auto 12px 12px 12px}
+    .axis-legend{display:none}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .net-btn,.case-card,.case-card::after,.mode-btn,.btn,.phase-card{transition:none}
+    .f2l-modal[open] .dialog-shell{animation:none}
+  }
+</style>
+</head>
+<body>
+
+<div class="mx-auto flex min-h-dvh max-w-[1320px] flex-col gap-5 p-4 lg:gap-6 lg:p-6">
+
+  <header class="app-header flex flex-wrap items-center justify-between gap-4 px-1 py-1">
+    <div class="flex items-center gap-3">
+      <div class="brand-mark" aria-hidden="true">
+        <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+      </div>
+      <div>
+        <p class="mono text-[9.5px] uppercase tracking-[.2em] text-primary">Cube workbench</p>
+        <div class="mt-0.5 flex items-baseline gap-2">
+          <h1 class="display text-[27px] leading-none tracking-tight sm:text-[30px]">绿面朝下</h1>
+          <span class="mono text-[10px] tracking-wider opacity-35">3×3×3</span>
+        </div>
+      </div>
+    </div>
+    <nav class="mode-switch" aria-label="工作区">
+      <button id="modePlay" class="mode-btn is-active" aria-pressed="true">
+        自由转动
+        <span class="mode-count">1</span>
+      </button>
+      <button id="modeF2L" class="mode-btn" aria-pressed="false">
+        F2L 公式
+        <span class="mode-count">41</span>
+      </button>
+    </nav>
+    <p class="hidden max-w-[30ch] text-right text-[11.5px] leading-relaxed text-[var(--ink-soft)] xl:block">
+      拖动方块表面拧层，拖动空白转视角。<br>滚轮缩放，Shift 反向。
+    </p>
+  </header>
+
+  <main class="flex-1">
+    <div id="workspacePlay" class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_328px] lg:gap-5">
+
+    <section class="stage-shell min-h-[61vh] lg:min-h-[calc(100dvh-152px)]">
+      <canvas id="stage" aria-label="可拧动的三阶魔方，绿色面在下方"></canvas>
+
+      <div class="stage-topbar">
+        <div class="flex flex-col items-start gap-2">
+          <span id="stateBadge" class="stage-chip">
+            <span class="inline-block size-2 rounded-full bg-[var(--color-success)]"></span>
+            <span id="stateText">已复原</span>
+          </span>
+          <span class="stage-chip"><span id="moveCount">0</span> 步</span>
+        </div>
+        <div class="stage-hints" aria-hidden="true">
+          <span class="stage-chip">拖动方块 <b>拧层</b></span>
+          <span class="stage-chip">拖动空白 <b>转视角</b></span>
+        </div>
+      </div>
+
+      <div class="stage-bottom">
+        <div class="axis-legend" aria-label="颜色方位">
+          <span><i style="background:#2f6fd0"></i>上 蓝</span>
+          <span><i style="background:#eceeeb;border:1px solid #ccd"></i>前 白</span>
+          <span><i style="background:#d8322c"></i>右 红</span>
+          <span><i style="background:#1f9d55"></i>下 绿</span>
+          <span><i style="background:#f07a2b"></i>左 橙</span>
+          <span><i style="background:#f5c518"></i>后 黄</span>
+        </div>
+        <button id="lookBottom" class="stage-chip pointer-events-auto transition hover:border-[var(--line-strong)] hover:bg-white">转到下方看绿面</button>
+      </div>
+    </section>
+
+    <aside class="control-rail">
+
+      <div class="panel p-4">
+        <div class="panel-head">
+          <div>
+            <p class="panel-kicker">Turn control</p>
+            <h2 class="mt-1 text-[15px] font-bold tracking-tight">转动</h2>
+          </div>
+          <div class="segmented" role="group" aria-label="转动方向">
+            <button id="dirCW" class="btn btn-xs btn-neutral" aria-pressed="true">顺时针</button>
+            <button id="dirCCW" class="btn btn-xs" aria-pressed="false">逆时针</button>
+          </div>
+        </div>
+
+        <div class="turn-net grid grid-cols-4 gap-2 sm:grid-cols-6 lg:grid-cols-4">
+          <button class="net-btn col-start-2 row-start-1" data-face="U" aria-label="上层 U 面">
+            <span class="cap">U</span>U<span class="swatch" style="background:#2f6fd0"></span>
+          </button>
+          <button class="net-btn col-start-1 row-start-2" data-face="L" aria-label="左层 L 面">
+            <span class="cap">L</span>L<span class="swatch" style="background:#f07a2b"></span>
+          </button>
+          <button class="net-btn col-start-2 row-start-2" data-face="F" aria-label="前层 F 面">
+            <span class="cap">F</span>F<span class="swatch" style="background:#e7e9e6"></span>
+          </button>
+          <button class="net-btn col-start-3 row-start-2" data-face="R" aria-label="右层 R 面">
+            <span class="cap">R</span>R<span class="swatch" style="background:#d8322c"></span>
+          </button>
+          <button class="net-btn col-start-4 row-start-2" data-face="B" aria-label="后层 B 面">
+            <span class="cap">B</span>B<span class="swatch" style="background:#f5c518"></span>
+          </button>
+          <button class="net-btn col-start-2 row-start-3" data-face="D" aria-label="底层 D 面（绿色）">
+            <span class="cap">D</span>D<span class="swatch" style="background:#1f9d55"></span>
+          </button>
+        </div>
+        <p class="mt-4 border-t border-[var(--line)] pt-3 text-[11px] leading-relaxed text-[var(--ink-soft)]">
+          键盘 <kbd class="kbd kbd-xs">U</kbd> <kbd class="kbd kbd-xs">D</kbd> <kbd class="kbd kbd-xs">L</kbd>
+          <kbd class="kbd kbd-xs">R</kbd> <kbd class="kbd kbd-xs">F</kbd> <kbd class="kbd kbd-xs">B</kbd>，
+          加 <kbd class="kbd kbd-xs">Shift</kbd> 反向。
+        </p>
+      </div>
+
+      <div class="panel p-4">
+        <div class="panel-head !mb-3">
+          <div>
+            <p class="panel-kicker">Move log</p>
+            <h2 class="mt-1 text-[15px] font-bold tracking-tight">记录</h2>
+          </div>
+          <span class="mono text-[10px] text-[var(--ink-soft)]">最近 24 步</span>
+        </div>
+        <div id="log" class="log" aria-live="polite"></div>
+        <p id="logEmpty" class="py-1 text-[12px] text-[var(--ink-soft)]">还没有动作。</p>
+      </div>
+
+      <div class="panel flex flex-col gap-2 p-3">
+        <button id="scramble" class="btn btn-sm btn-neutral">打乱魔方</button>
+        <div class="grid grid-cols-2 gap-2">
+          <button id="undo" class="btn btn-sm" disabled>撤销</button>
+          <button id="reset" class="btn btn-sm">复原</button>
+        </div>
+        <button id="openF2L" class="btn btn-sm btn-ghost justify-between">
+          去练 F2L 公式
+          <span class="mono text-[10px] opacity-45">41 cases →</span>
+        </button>
+      </div>
+
+    </aside>
+    </div>
+
+    <section id="workspaceF2L" class="f2l-section hidden p-4 lg:p-6" aria-labelledby="f2l-title">
+      <div class="mb-5 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p class="mono text-[10px] uppercase tracking-[.2em] text-primary">F2L · 41 cases</p>
+          <h2 id="f2l-title" class="display mt-1 text-[28px] leading-tight tracking-tight sm:text-[34px]">前两层公式</h2>
+          <p class="mt-2 max-w-[54ch] text-[12.5px] leading-relaxed text-[var(--ink-soft)]">
+            每张卡片就是该局面的三维预览。点开后可直接播放、单步或拖动观察。
+          </p>
+        </div>
+        <button id="f2lRandom" class="btn btn-sm btn-neutral">随机一题</button>
+      </div>
+
+      <details class="f2l-guide mb-4">
+        <summary>
+          <span>
+            <span class="mono text-[9.5px] uppercase tracking-[.18em] text-primary">Intuitive F2L</span>
+            <strong class="ml-2 text-[13px]">先理解这四步，再记公式</strong>
+          </span>
+        </summary>
+        <div class="f2l-guide-grid" style="padding-top:12px">
+          <div class="guide-step">
+            <span class="guide-index">01</span>
+            <strong>盯住目标槽</strong>
+            <p>本页统一练右前槽，绿色在底、蓝色在顶。每次只处理这一组角块和棱块。</p>
+          </div>
+          <div class="guide-step">
+            <span class="guide-index">02</span>
+            <strong>先看角，再看棱</strong>
+            <p>找到含绿、红、白的角块，观察绿贴纸朝向；再找它对应的红蓝棱块。</p>
+          </div>
+          <div class="guide-step">
+            <span class="guide-index">03</span>
+            <strong>连成一对</strong>
+            <p>角棱分开时，先通过顶层和侧面的转动让它们相邻；已相连就别拆散。</p>
+          </div>
+          <div class="guide-step">
+            <span class="guide-index">04</span>
+            <strong>整体插入</strong>
+            <p>把配对转到槽口，再整体放下去。操作时注意别破坏已经完成的槽。</p>
+          </div>
+        </div>
+      </details>
+
+      <div class="filter-bar">
+        <div id="f2lTabs" class="filter-tabs" role="tablist" aria-label="按情形筛选">
+          <button role="tab" class="filter-tab is-active" data-group="all" aria-selected="true">
+            <span class="group-dot"></span>全部<span data-count="all">41</span>
+          </button>
+          <button role="tab" class="filter-tab" data-group="top" aria-selected="false">
+            <span class="group-dot" style="color:#2f6fd0"></span>未成对<span data-count="top">0</span>
+          </button>
+          <button role="tab" class="filter-tab" data-group="corner" aria-selected="false">
+            <span class="group-dot" style="color:#d8322c"></span>角在槽<span data-count="corner">0</span>
+          </button>
+          <button role="tab" class="filter-tab" data-group="edge" aria-selected="false">
+            <span class="group-dot" style="color:#f07a2b"></span>棱在槽<span data-count="edge">0</span>
+          </button>
+          <button role="tab" class="filter-tab" data-group="both" aria-selected="false">
+            <span class="group-dot" style="color:#1f9d55"></span>都在槽<span data-count="both">0</span>
+          </button>
+          <button role="tab" class="filter-tab" data-group="other" aria-selected="false">
+            <span class="group-dot" style="color:#f5c518"></span>左前槽<span data-count="other">0</span>
+          </button>
+        </div>
+        <div class="flex items-center gap-3 pr-1 text-[11px] text-[var(--ink-soft)]">
+          <span id="f2lDone" class="mono hidden sm:inline">已练 0</span>
+          <span>点击卡片打开演示</span>
+          <span id="f2lCount" class="mono">41 / 41</span>
+        </div>
+      </div>
+      <div id="f2lList" class="grid grid-cols-2 content-start gap-3 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5"></div>
+      <p id="f2lEmpty" class="py-6 text-center text-[12px] opacity-45" hidden>这个分类下没有 case。</p>
+    </section>
+  </main>
+</div>
+
+<dialog id="f2lDialog" class="f2l-modal">
+  <div id="f2lSheet" class="dialog-shell">
+    <div class="flex min-h-0 flex-col p-4 sm:p-5"></div>
+  </div>
+  <form method="dialog" class="dialog-backdrop">
+    <button id="f2lClose" aria-label="关闭">关闭</button>
+  </form>
+</dialog>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"
+  }
+}
+</script>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
