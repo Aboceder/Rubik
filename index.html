@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>魔方方魔</title>
+<link rel="icon" href="assets/Rubik.png" type="image/png">
+<link rel="apple-touch-icon" href="assets/Rubik.png">
 <link href="https://cdn.jsdelivr.net/npm/daisyui@5" rel="stylesheet" type="text/css">
 <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 <style>
@@ -47,20 +49,7 @@
   .app-header{
     position:relative;z-index:20;
   }
-  .brand-mark{
-    display:grid;grid-template-columns:repeat(3,5px);grid-template-rows:repeat(3,5px);gap:2px;
-    padding:7px;border-radius:9px;background:var(--color-neutral);
-    box-shadow:0 1px 0 rgba(255,255,255,.22) inset,0 5px 18px rgba(17,23,19,.14);
-  }
-  .brand-mark i{border-radius:1.5px;background:#3b4a43}
-  .brand-mark i:nth-child(2),
-  .brand-mark i:nth-child(4){background:#2f6fd0}
-  .brand-mark i:nth-child(3),
-  .brand-mark i:nth-child(6),
-  .brand-mark i:nth-child(9){background:#d8322c}
-  .brand-mark i:nth-child(7),
-  .brand-mark i:nth-child(8){background:#eceeeb}
-  .brand-mark i:nth-child(5){background:#1f9d55}
+  .brand-mark{display:block;width:46px;height:46px;flex:none;object-fit:contain}
   .mode-switch{
     display:flex;gap:3px;padding:4px;border:1px solid var(--line);
     border-radius:999px;background:rgba(252,252,248,.7);
@@ -438,9 +427,7 @@
 
   <header class="app-header flex flex-wrap items-center justify-between gap-4 px-1 py-1">
     <div class="flex items-center gap-3">
-      <div class="brand-mark" aria-hidden="true">
-        <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
-      </div>
+      <img class="brand-mark" src="assets/Rubik.png" alt="" width="46" height="46">
       <div>
         <p class="mono text-[9.5px] uppercase tracking-[.2em] text-primary">Cube workbench</p>
         <div class="mt-0.5 flex items-baseline gap-2">
