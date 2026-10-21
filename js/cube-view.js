@@ -404,6 +404,10 @@
       this.flyTo(below ? HOME_CAMERA : BELOW_CAMERA);
       return !below;
     }
+
+    isBelow() {
+      return this.camera.position.y < 0;
+    }
   }
 
   window.RubikCubeView = CubeView;

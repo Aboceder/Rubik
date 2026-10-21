@@ -27,6 +27,9 @@
   const stateBadge = document.getElementById('stateBadge');
   const stateText = document.getElementById('stateText');
   const lookButton = document.getElementById('lookBottom');
+  const scrambleButton = document.getElementById('scramble');
+  const resetButton = document.getElementById('reset');
+  const touchModeButton = document.getElementById('touchMode');
   const modePlayBtn = document.getElementById('modePlay');
   const modeF2LBtn = document.getElementById('modeF2L');
   const workspacePlay = document.getElementById('workspacePlay');
@@ -103,9 +106,44 @@
     if (event.key === ' ') event.preventDefault();
   });
 
+  function setLookLabel() {
+    lookButton.textContent = view.isBelow() ? '还原视角' : '转到下方看绿面';
+  }
+
   lookButton.addEventListener('click', () => {
     const nowBelow = view.lookBelow();
-    lookButton.textContent = nowBelow ? '回到俯视' : '转到下方看绿面';
+    lookButton.textContent = nowBelow ? '还原视角' : '转到下方看绿面';
+  });
+
+  scrambleButton.addEventListener('click', () => {
+    if (animating) return;
+    const keys = Object.keys(FACES);
+    let last = '';
+    for (let i = 0; i < 22; i++) {
+      let key;
+      do {
+        key = keys[Math.floor(Math.random() * keys.length)];
+      } while (key === last);
+      last = key;
+      enqueueFaceTurn(key, Math.random() < 0.5, {
+        silent: true,
+        duration: view.reduceMotion ? 1 : 80,
+      });
+    }
+    chain = chain.then(() => {
+      moveCount = 0;
+      refreshStatus();
+    });
+  });
+
+  resetButton.addEventListener('click', () => {
+    if (animating) return;
+    chain = chain.then(() => {
+      state = createSolvedState();
+      moveCount = 0;
+      syncView();
+      refreshStatus();
+    });
   });
 
   function renderWorkspace(next) {
@@ -131,6 +169,7 @@
 
   let drag = null;
   let suppressOrbit = false;
+  let touchTurnMode = false;
   const AXES = [
     [1, 0, 0],
     [0, 1, 0],
@@ -190,6 +229,7 @@
     (event) => {
       if (animating || detail.isActive()) return;
       if (event.pointerType === 'mouse' && event.button !== 0) return;
+      if (event.pointerType !== 'mouse' && !touchTurnMode) return;
       const hit = view.pick(event.clientX, event.clientY);
       if (!hit) return;
       drag = {
@@ -218,7 +258,7 @@
       if (!drag || event.pointerId !== drag.id) return;
       const dx = event.clientX - drag.startX;
       const dy = event.clientY - drag.startY;
-      if (Math.hypot(dx, dy) < 11) return;
+      if (Math.hypot(dx, dy) < 16) return;
       const move = resolveDrag(dx, dy);
       drag = null;
       if (move) queueMove(move);
@@ -239,6 +279,12 @@
   canvas.addEventListener('pointercancel', endDrag, true);
   window.addEventListener('pointerup', endDrag);
   window.addEventListener('pointercancel', endDrag);
+
+  touchModeButton.addEventListener('click', () => {
+    touchTurnMode = !touchTurnMode;
+    touchModeButton.textContent = touchTurnMode ? '手势：拧层' : '手势：转视角';
+    touchModeButton.setAttribute('aria-pressed', String(touchTurnMode));
+  });
 
   const listEl = document.getElementById('f2lList');
   const emptyEl = document.getElementById('f2lEmpty');
