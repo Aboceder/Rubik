@@ -70,11 +70,14 @@
       this.cubies = new Map();
       this.flying = false;
       this.framed = false;
+      this.needsRender = true;
+      this.visible = true;
 
       this.renderer = new THREE.WebGLRenderer({
         canvas,
         antialias: true,
         alpha: true,
+        powerPreference: 'high-performance',
       });
       this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -122,10 +125,23 @@
       this.resizeObserver.observe(canvas.parentElement);
       this.resize();
 
+      this.visibilityObserver = new IntersectionObserver((entries) => {
+        this.visible = entries[entries.length - 1].isIntersecting;
+        this.invalidate();
+      }, { rootMargin: '80px' });
+      this.visibilityObserver.observe(canvas);
+
       this.renderer.setAnimationLoop(() => {
+        if (!this.visible) return;
         if (this.controls.enabled) this.controls.update();
+        if (!this.needsRender) return;
+        this.needsRender = false;
         this.renderer.render(this.scene, this.camera);
       });
+    }
+
+    invalidate() {
+      this.needsRender = true;
     }
 
     addFloor() {
@@ -227,6 +243,7 @@
         group.quaternion.setFromRotationMatrix(matrixFromRows(cubie.ori));
         group.updateMatrixWorld(true);
       }
+      this.invalidate();
     }
 
     setInteractive(value) {
@@ -250,6 +267,7 @@
         }
       }
       this.camera.updateProjectionMatrix();
+      this.invalidate();
     }
 
     pick(clientX, clientY) {
@@ -315,15 +333,18 @@
           const t = Math.min(1, (now - start) / ms);
           const eased = 1 - Math.pow(1 - t, 3);
           pivot.quaternion.copy(new THREE.Quaternion().slerp(target, eased));
+          this.invalidate();
           if (t < 1) requestAnimationFrame(step);
           else {
             pivot.quaternion.copy(target);
             pivot.updateMatrixWorld(true);
             selected.forEach((group) => this.cubeGroup.attach(group));
             this.cubeGroup.remove(pivot);
+            this.invalidate();
             resolve();
           }
         };
+        this.invalidate();
         requestAnimationFrame(step);
       });
     }
@@ -347,12 +368,15 @@
             eased,
           );
           this.cubeGroup.updateMatrixWorld(true);
+          this.invalidate();
           if (t < 1) requestAnimationFrame(step);
           else {
             this.cubeGroup.quaternion.copy(endQuaternion);
+            this.invalidate();
             resolve();
           }
         };
+        this.invalidate();
         requestAnimationFrame(step);
       });
     }
@@ -368,6 +392,7 @@
         const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
         this.camera.position.lerpVectors(from, target, eased);
         this.controls.update();
+        this.invalidate();
         if (t < 1) requestAnimationFrame(step);
         else this.flying = false;
       };

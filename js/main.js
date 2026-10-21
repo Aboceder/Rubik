@@ -25,7 +25,7 @@
   let chain = Promise.resolve();
   let animating = false;
   let inverse = false;
-  let history = [];
+  let moveHistory = [];
   let moveCount = 0;
 
   const logEl = document.getElementById('log');
@@ -45,19 +45,19 @@
 
   function renderLog() {
     logEl.innerHTML = '';
-    const shown = history.slice(-24);
+    const shown = moveHistory.slice(-24);
     shown.forEach((move, index) => {
       const chip = document.createElement('span');
       chip.textContent = move.label;
       if (index === shown.length - 1) chip.className = 'is-last';
       logEl.appendChild(chip);
     });
-    logEmptyEl.hidden = history.length > 0;
+    logEmptyEl.hidden = moveHistory.length > 0;
   }
 
   function refreshStatus() {
     moveCountEl.textContent = moveCount;
-    undoBtn.disabled = history.length === 0;
+    undoBtn.disabled = moveHistory.length === 0;
     const solved = isSolved(state);
     stateText.textContent = solved ? '已复原' : '已打乱';
     stateBadge.classList.toggle('is-solved', solved);
@@ -88,7 +88,7 @@
     syncView();
     animating = false;
     if (!move.silent) {
-      history.push({ label: move.label, token: move });
+      moveHistory.push({ label: move.label, token: move });
       moveCount += 1;
       renderLog();
     }
@@ -176,7 +176,7 @@
       });
     }
     chain = chain.then(() => {
-      history = [];
+      moveHistory = [];
       moveCount = 0;
       renderLog();
       refreshStatus();
@@ -188,7 +188,7 @@
     chain = chain.then(() => {
       state = createSolvedState();
       syncView();
-      history = [];
+      moveHistory = [];
       moveCount = 0;
       renderLog();
       refreshStatus();
@@ -196,8 +196,8 @@
   });
 
   document.getElementById('undo').addEventListener('click', () => {
-    if (animating || !history.length) return;
-    const last = history.pop();
+    if (animating || !moveHistory.length) return;
+    const last = moveHistory.pop();
     moveCount = Math.max(0, moveCount - 1);
     queueToken(
       {

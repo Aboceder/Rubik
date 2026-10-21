@@ -40,6 +40,7 @@
     view.renderer.forceContextLoss();
     if (view.scene.environment) view.scene.environment.dispose();
     view.resizeObserver.disconnect();
+    view.visibilityObserver.disconnect();
     view = null;
   }
 
