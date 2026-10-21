@@ -114,6 +114,10 @@
     background-size:34px 34px,34px 34px,auto;
     box-shadow:0 1px 0 rgba(255,255,255,.85) inset,0 24px 60px rgba(27,35,30,.08);
   }
+  .play-stage{
+    overflow:visible;border:0;border-radius:0;
+    background:transparent;box-shadow:none;
+  }
   #stage{position:absolute;inset:0;z-index:1;display:block;width:100%;height:100%;touch-action:none;cursor:grab}
   #stage.grabbing{cursor:grabbing}
   .stage-topbar{
@@ -139,11 +143,12 @@
   }
   .stage-bottom{
     position:absolute;z-index:3;inset:auto 18px 18px 18px;
-    display:flex;align-items:flex-end;justify-content:space-between;gap:12px;
+    display:flex;align-items:flex-end;justify-content:center;gap:12px;
     pointer-events:none;
   }
-  .stage-actions{display:flex;align-items:center;gap:7px;flex-wrap:wrap;justify-content:flex-end}
+  .stage-actions{display:flex;align-items:center;gap:7px;flex-wrap:nowrap;justify-content:center;width:100%}
   .axis-legend{
+    position:absolute;left:0;bottom:0;
     display:grid;grid-template-columns:repeat(3,1fr);gap:4px;width:132px;
     padding:8px;border:1px solid var(--line);border-radius:16px;
     background:rgba(252,252,248,.78);backdrop-filter:blur(10px);
@@ -385,8 +390,8 @@
   @media (max-width:640px){
     .stage-topbar{inset:12px 12px auto 12px}
     .stage-bottom{inset:auto 12px 12px 12px}
-    .stage-actions{gap:5px;flex-wrap:nowrap}
-    .stage-actions .stage-chip{padding:0 10px;font-size:10px}
+    .stage-actions{gap:4px;flex-wrap:nowrap}
+    .stage-actions .stage-chip{min-width:0;padding:0 8px;font-size:9.5px;white-space:nowrap}
     .axis-legend{display:none}
   }
   @media (prefers-reduced-motion:reduce){
@@ -427,7 +432,7 @@
   <main class="flex-1">
     <div id="workspacePlay">
 
-    <section class="stage-shell min-h-[61vh] lg:min-h-[calc(100dvh-142px)]">
+    <section class="stage-shell play-stage min-h-[61vh] lg:min-h-[calc(100dvh-142px)]">
       <canvas id="stage" aria-label="可拧动的三阶魔方，绿色面在下方"></canvas>
 
       <div class="stage-topbar">
@@ -454,9 +459,10 @@
           <span><i style="background:#f5c518"></i>后 黄</span>
         </div>
         <div class="stage-actions">
-          <button id="scramble" class="stage-chip pointer-events-auto transition hover:border-[var(--line-strong)] hover:bg-white">随机打乱</button>
-          <button id="reset" class="stage-chip pointer-events-auto transition hover:border-[var(--line-strong)] hover:bg-white">一键还原</button>
-          <button id="lookBottom" class="stage-chip pointer-events-auto transition hover:border-[var(--line-strong)] hover:bg-white">转到下方看绿面</button>
+          <button id="scramble" class="stage-chip pointer-events-auto transition hover:border-[var(--line-strong)] hover:bg-white">打乱</button>
+          <button id="reset" class="stage-chip pointer-events-auto transition hover:border-[var(--line-strong)] hover:bg-white">还原</button>
+          <button id="f2lPractice" class="stage-chip pointer-events-auto transition hover:border-[var(--line-strong)] hover:bg-white">F2L 练习</button>
+          <button id="lookBottom" class="stage-chip pointer-events-auto transition hover:border-[var(--line-strong)] hover:bg-white">视角</button>
         </div>
       </div>
     </section>

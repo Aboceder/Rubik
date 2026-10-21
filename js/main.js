@@ -29,6 +29,7 @@
   const lookButton = document.getElementById('lookBottom');
   const scrambleButton = document.getElementById('scramble');
   const resetButton = document.getElementById('reset');
+  const practiceButton = document.getElementById('f2lPractice');
   const modePlayBtn = document.getElementById('modePlay');
   const modeF2LBtn = document.getElementById('modeF2L');
   const workspacePlay = document.getElementById('workspacePlay');
@@ -37,6 +38,11 @@
 
   function refreshStatus() {
     moveCountEl.textContent = moveCount;
+    if (stateText.dataset.mode === 'practice') {
+      stateText.textContent = 'F2L 练习';
+      stateBadge.classList.remove('is-solved', 'is-scrambled');
+      return;
+    }
     const solved = isSolved(state);
     stateText.textContent = solved ? '已复原' : '已打乱';
     stateBadge.classList.toggle('is-solved', solved);
@@ -105,17 +111,13 @@
     if (event.key === ' ') event.preventDefault();
   });
 
-  function setLookLabel() {
-    lookButton.textContent = view.isBelow() ? '还原视角' : '转到下方看绿面';
-  }
-
   lookButton.addEventListener('click', () => {
-    const nowBelow = view.lookBelow();
-    lookButton.textContent = nowBelow ? '还原视角' : '转到下方看绿面';
+    view.lookBelow();
   });
 
   scrambleButton.addEventListener('click', () => {
     if (animating) return;
+    delete stateText.dataset.mode;
     const keys = Object.keys(FACES);
     let last = '';
     for (let i = 0; i < 22; i++) {
@@ -139,7 +141,30 @@
     if (animating) return;
     chain = chain.then(() => {
       state = createSolvedState();
+      delete stateText.dataset.mode;
       moveCount = 0;
+      syncView();
+      refreshStatus();
+    });
+  });
+
+  practiceButton.addEventListener('click', () => {
+    if (animating) return;
+    const practiceCase = CASES[Math.floor(Math.random() * CASES.length)];
+    chain = chain.then(() => {
+      state = practiceCase.setup.map((cubie) => ({
+        ...cubie,
+        home: cubie.home.slice(),
+        pos: cubie.pos.slice(),
+        ori: cubie.ori.map((row) => row.slice()),
+        stickers: cubie.stickers.map((sticker) => ({
+          ...sticker,
+          normal: sticker.normal.slice(),
+        })),
+      }));
+      moveCount = 0;
+      stateText.dataset.mode = 'practice';
+      stateBadge.classList.remove('is-solved', 'is-scrambled');
       syncView();
       refreshStatus();
     });

@@ -4,8 +4,8 @@
   const { FACES } = window.RubikNotation;
   const { sameVector } = window.RubikState;
 
-  const HOME_CAMERA = new THREE.Vector3(5.9, 4.9, 7.2);
-  const BELOW_CAMERA = new THREE.Vector3(4.6, -4.4, 6.0);
+  const HOME_CAMERA = new THREE.Vector3(5.1, 4.25, 6.25);
+  const BELOW_CAMERA = new THREE.Vector3(4.0, -3.85, 5.2);
   const Z_POS = new THREE.Vector3(0, 0, 1);
 
   function keyForHome(home) {
@@ -135,7 +135,7 @@
 
       this.renderer.setAnimationLoop(() => {
         if (!this.visible) return;
-        if (this.controls.enabled) this.controls.update();
+        if (this.controls.enabled && this.controls.update()) this.invalidate();
         if (!this.needsRender) return;
         this.needsRender = false;
         this.renderer.render(this.scene, this.camera);
@@ -264,8 +264,8 @@
       if (!this.framed) {
         this.framed = true;
         if (width / height < 1.05) {
-          this.camera.position.set(7.2, 5.6, 9.4);
-          this.controls.minDistance = 9.2;
+          this.camera.position.set(6.1, 4.8, 7.8);
+          this.controls.minDistance = 7.2;
         }
       }
       this.camera.updateProjectionMatrix();
