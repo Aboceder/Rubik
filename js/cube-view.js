@@ -279,18 +279,42 @@
       this.raycaster.setFromCamera(this.pointer, this.camera);
       const hits = this.raycaster.intersectObjects([...this.cubies.values()], true);
       for (const hit of hits) {
-        if (!hit.object.userData.colorKey) continue;
-        const group = hit.object.parent;
+        // Accept sticker and body hits; stickers report face normals,
+        // body hits use the closest outward face normal.
+        const group = hit.object.userData.colorKey
+          ? hit.object.parent
+          : hit.object;
         const home = group.userData.home;
         const cubie = this.state.find((item) => sameVector(item.home, home));
         if (!cubie) continue;
+        if (hit.object.userData.colorKey) {
+          const quaternion = new THREE.Quaternion();
+          group.getWorldQuaternion(quaternion);
+          const normal = new THREE.Vector3(
+            hit.object.userData.normal[0],
+            hit.object.userData.normal[1],
+            hit.object.userData.normal[2],
+          )
+            .applyQuaternion(quaternion)
+            .round();
+          return { group, cubie, point: hit.point.clone(), normal };
+        }
+        // Body hit: derive normal from local hit position relative to cubie center
+        const localPoint = group.worldToLocal(hit.point.clone());
+        const absX = Math.abs(localPoint.x);
+        const absY = Math.abs(localPoint.y);
+        const absZ = Math.abs(localPoint.z);
+        let normalLocal;
+        if (absX >= absY && absX >= absZ) {
+          normalLocal = new THREE.Vector3(Math.sign(localPoint.x), 0, 0);
+        } else if (absY >= absZ) {
+          normalLocal = new THREE.Vector3(0, Math.sign(localPoint.y), 0);
+        } else {
+          normalLocal = new THREE.Vector3(0, 0, Math.sign(localPoint.z));
+        }
         const quaternion = new THREE.Quaternion();
         group.getWorldQuaternion(quaternion);
-        const normal = new THREE.Vector3(
-          hit.object.userData.normal[0],
-          hit.object.userData.normal[1],
-          hit.object.userData.normal[2],
-        )
+        const normal = normalLocal
           .applyQuaternion(quaternion)
           .round();
         return {
@@ -301,6 +325,95 @@
         };
       }
       return null;
+    }
+
+    // Real-time layer drag support: attach a layer to a pivot, rotate it with
+    // the finger, then snap to the nearest quarter-turn on release.
+    beginTurn(axis, layers) {
+      if (this.turnPivot) this.cancelTurn();
+      const vector = new THREE.Vector3(axis[0], axis[1], axis[2]);
+      const selected = [];
+      for (const cubie of this.state) {
+        const layer = Math.round(
+          cubie.pos[0] * axis[0] + cubie.pos[1] * axis[1] + cubie.pos[2] * axis[2],
+        );
+        if (!layers.includes(layer)) continue;
+        const group = this.cubies.get(keyForHome(cubie.home));
+        if (group) selected.push(group);
+      }
+      if (!selected.length) return false;
+      this.turnPivot = new THREE.Group();
+      this.cubeGroup.add(this.turnPivot);
+      selected.forEach((group) => this.turnPivot.attach(group));
+      this.turnAxis = vector;
+      this.turnLayers = layers.slice();
+      this.invalidate();
+      return true;
+    }
+
+    setTurnAngle(angle) {
+      if (!this.turnPivot) return;
+      this.turnAngle = angle;
+      this.turnPivot.quaternion.setFromAxisAngle(this.turnAxis, angle);
+      this.invalidate();
+    }
+
+    getTurnAngle() {
+      return this.turnPivot ? (this.turnAngle || 0) : 0;
+    }
+
+    hasTurn() {
+      return !!this.turnPivot;
+    }
+
+    async finishTurn(axis, layers, quarterTurns) {
+      if (!this.turnPivot) return;
+      const currentAngle = quarterTurns * (Math.PI / 2);
+      const currentQuat = this.turnPivot.quaternion.clone();
+      const targetQuat = new THREE.Quaternion().setFromAxisAngle(
+        new THREE.Vector3(axis[0], axis[1], axis[2]),
+        currentAngle,
+      );
+      const angleDiff = Math.abs(currentQuat.angleTo(targetQuat));
+      // Already aligned — just detach
+      if (angleDiff < 0.01) {
+        this.detachTurn();
+        return;
+      }
+      const ms = this.reduceMotion ? 1 : Math.min(220, 60 + angleDiff * 140);
+      const start = performance.now();
+      await new Promise((resolve) => {
+        const step = (now) => {
+          const t = Math.min(1, (now - start) / ms);
+          const eased = 1 - Math.pow(1 - t, 3);
+          this.turnPivot.quaternion.slerpQuaternions(currentQuat, targetQuat, eased);
+          this.invalidate();
+          if (t < 1) requestAnimationFrame(step);
+          else {
+            this.turnPivot.quaternion.copy(targetQuat);
+            this.detachTurn();
+            resolve();
+          }
+        };
+        requestAnimationFrame(step);
+      });
+    }
+
+    detachTurn() {
+      if (!this.turnPivot) return;
+      this.turnPivot.updateMatrixWorld(true);
+      const children = [...this.turnPivot.children];
+      children.forEach((group) => this.cubeGroup.attach(group));
+      this.cubeGroup.remove(this.turnPivot);
+      this.turnPivot = null;
+      this.turnAxis = null;
+      this.turnLayers = null;
+      this.turnAngle = 0;
+      this.invalidate();
+    }
+
+    cancelTurn() {
+      this.detachTurn();
     }
 
     screenDelta(origin, direction) {

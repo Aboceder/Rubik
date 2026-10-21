@@ -208,14 +208,15 @@
   let drag = null;
   let suppressOrbit = false;
   let orbitDrag = null;
+  let layerDrag = null;
   const AXES = [
     [1, 0, 0],
     [0, 1, 0],
     [0, 0, 1],
   ];
 
-  function resolveDrag(dx, dy) {
-    const normal = drag.normal;
+  function resolveDrag(hit, dx, dy) {
+    const normal = hit.normal;
     const dragVector = { x: dx, y: dy };
     const length = Math.hypot(dx, dy);
     if (length < 1) return null;
@@ -227,7 +228,7 @@
         continue;
       }
       const direction = new window.THREE.Vector3(tangent[0], tangent[1], tangent[2]);
-      const screen = view.screenDelta(drag.point, direction);
+      const screen = view.screenDelta(hit.point, direction);
       if (screen.lengthSq() < 1e-6) continue;
       screen.normalize();
       const dot = screen.x * dragVector.x + screen.y * dragVector.y;
@@ -246,9 +247,9 @@
     const axisArray = [axis.x, axis.y, axis.z];
     const angle = -sign * (Math.PI / 2);
     const layer = Math.round(
-      drag.cubie.pos[0] * axisArray[0] +
-        drag.cubie.pos[1] * axisArray[1] +
-        drag.cubie.pos[2] * axisArray[2],
+      hit.cubie.pos[0] * axisArray[0] +
+        hit.cubie.pos[1] * axisArray[1] +
+        hit.cubie.pos[2] * axisArray[2],
     );
     const amount = angle < 0 ? 1 : -1;
     return {
@@ -265,7 +266,7 @@
   canvas.addEventListener(
     'pointerdown',
     (event) => {
-      if (animating || detail.isActive()) return;
+      if (animating || detail.isActive() || layerDrag || drag) return;
       if (event.pointerType === 'mouse' && event.button !== 0) return;
       const hit = view.pick(event.clientX, event.clientY);
       if (!hit) {
@@ -283,6 +284,7 @@
         }
         return;
       }
+      // Defer axis/layer lock-in until the finger moves past a threshold.
       drag = {
         id: event.pointerId,
         startX: event.clientX,
@@ -314,16 +316,73 @@
         view.orbitBy(dx, dy);
         return;
       }
-      if (!drag || event.pointerId !== drag.id) return;
+      if (!drag || event.pointerId !== drag.id || animating) return;
       const dx = event.clientX - drag.startX;
       const dy = event.clientY - drag.startY;
-      if (Math.hypot(dx, dy) < 16) return;
-      const move = resolveDrag(dx, dy);
-      drag = null;
-      if (move) queueMove(move);
+      const dist = Math.hypot(dx, dy);
+      if (!layerDrag && dist < 12) return;
+      if (!layerDrag) {
+        const move = resolveDrag(drag, dx, dy);
+        if (!move) return;
+        layerDrag = {
+          axis: move.axis,
+          layers: move.layers,
+          baseAngle: move.angle, // angle for one quarter-turn in resolved direction
+          startX: event.clientX,
+          startY: event.clientY,
+          point: drag.point.clone(),
+        };
+        view.beginTurn(move.axis, move.layers);
+        return;
+      }
+      // Real-time angle: the drag tangent is the resolved drag direction, so
+      // angle = -(projection of drag onto tangent) * pixelsPerQuarter.
+      // Tangent = axis x normal gives the direction that maps to -angle in
+      // resolveDrag, consistent with the sign convention used there.
+      const tangent = new window.THREE.Vector3(...layerDrag.axis)
+        .cross(new window.THREE.Vector3(...drag.normal));
+      const screen = view.screenDelta(layerDrag.point, tangent);
+      if (screen.lengthSq() < 1e-6) return;
+      screen.normalize();
+      const dragVec = new window.THREE.Vector2(dx, dy);
+      // Signed projection length in px along the tangent direction
+      const projectedPx = dragVec.dot(screen);
+      // ~55px per quarter-turn: tuned to feel like 1:1 with sticker size
+      const quarterPx = 55;
+      const rawAngle = -(projectedPx / quarterPx) * (Math.PI / 2);
+      view.setTurnAngle(rawAngle);
     },
     true,
   );
+
+  async function finishLayerDrag() {
+    if (!layerDrag) return;
+    const info = layerDrag;
+    layerDrag = null;
+    const currentAngle = view.getTurnAngle();
+    // Snap to nearest multiple of PI/2
+    const snapped = Math.round(currentAngle / (Math.PI / 2)) * (Math.PI / 2);
+    const quarterTurns = Math.round(snapped / (Math.PI / 2));
+    await view.finishTurn(info.axis, info.layers, quarterTurns);
+    if (quarterTurns !== 0) {
+      // Each quarter turn is one move; describe() gives the notation label for
+      // a single quarter turn in the snapped direction.
+      const absTurns = Math.abs(quarterTurns);
+      const dirAmount = quarterTurns > 0 ? 1 : -1;
+      const stateResult = applyTokens(state, [{
+        base: describe(info.axis, info.layers[0], dirAmount * Math.PI / 2),
+        amount: dirAmount,
+        axis: info.axis,
+        layers: info.layers,
+        all: false,
+      }]);
+      state = stateResult.state;
+      syncView();
+      // For 2 quarter-turns show as one move (like standard notation "U2")
+      moveCount += absTurns === 2 ? 1 : absTurns;
+      refreshStatus();
+    }
+  }
 
   function endDrag(event) {
     if (drag && event.pointerId === drag.id) drag = null;
@@ -332,6 +391,14 @@
     if (suppressOrbit) {
       suppressOrbit = false;
       view.controls.enabled = true;
+    }
+    if (layerDrag) {
+      animating = true;
+      syncActionButtons();
+      finishLayerDrag().then(() => {
+        animating = false;
+        syncActionButtons();
+      });
     }
   }
 
