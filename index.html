@@ -33,7 +33,9 @@
     --paper: #fcfcf8;
     --paper-warm: #f3f3ec;
   }
-  html,body{height:100%}
+  html,body{width:100%;max-width:100%;overflow-x:hidden;overscroll-behavior-x:none}
+  html{height:100%}
+  body{min-height:100%}
   *{-webkit-tap-highlight-color:transparent}
   body{
     font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
@@ -44,6 +46,7 @@
       var(--color-base-200);
     color:var(--color-base-content);
   }
+  main,section,div,aside,nav,header{min-width:0}
   .mono{font-family:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace}
   .display{font-family:"Songti SC","STSong","Noto Serif CJK SC",serif;font-weight:700}
   .app-header{
@@ -81,13 +84,14 @@
   .mode-btn:focus:not(:focus-visible),
   .phase-card:focus:not(:focus-visible),
   .f2l-guide summary:focus:not(:focus-visible){outline:none!important}
-  .modal-box:focus,
-  dialog:focus{outline:none!important}
+  .modal-box:focus{outline:none!important}
   .btn:focus-visible,
   .filter-tab:focus-visible,
   .net-btn:focus-visible,
   .mode-btn:focus-visible,
-  .case-card:focus-visible{
+  .case-card:focus-visible,
+  .tok:focus-visible,
+  .detail-nav-btn:focus-visible{
     outline:2px solid rgba(13,122,66,.58);outline-offset:2px;
   }
   .btn{
@@ -207,15 +211,18 @@
   }
   .log span.is-last{background:var(--color-neutral);color:var(--color-neutral-content)}
   .tok{
+    display:inline-flex;align-items:center;justify-content:center;
+    min-width:28px;text-align:center;
     font-family:ui-monospace,Menlo,monospace;font-size:12px;line-height:1;
     padding:6px 9px;border-radius:var(--radius-pill);
     background:var(--color-base-100);border:1px solid var(--line);
+    cursor:pointer;
     transition:background .12s ease,color .12s ease,border-color .12s ease;
   }
+  .tok:hover{border-color:var(--line-strong);background:#fff}
   .tok.is-now{background:var(--color-neutral);border-color:var(--color-neutral);color:var(--color-neutral-content)}
+  .tok.is-now:hover{background:var(--color-neutral);border-color:var(--color-neutral)}
   .tok.is-past{opacity:.4}
-  .dialog-player .tok{padding:4px 7px;font-size:10.5px}
-  .dialog-player .kbd{height:1.35rem;min-height:1.35rem;font-size:9px}
   .case-card{
     position:relative;overflow:hidden;
     border:1px solid var(--line);border-radius:1.25rem;
@@ -308,46 +315,70 @@
   .phase-card span{display:block;margin-top:4px;font-size:10.5px;line-height:1.55;color:var(--ink-soft)}
   .phase-dot{width:6px;height:6px;flex:none;border-radius:999px;background:var(--line-strong)}
   .phase-card.is-current .phase-dot{background:var(--color-primary);box-shadow:0 0 0 3px rgba(13,122,66,.12)}
-  .dialog-title{font-size:25px;line-height:1.08}
-  .dialog-shell{
-    display:grid;grid-template-rows:auto minmax(0,1fr);overflow:hidden;
-    width:min(920px,100vw - 2rem);height:min(720px,92dvh);
-    border:1px solid rgba(255,255,255,.7);border-radius:1.6rem;
-    background:var(--paper);box-shadow:0 30px 90px rgba(17,23,19,.24);
-    translate:0 0;scale:1;opacity:1;
+  .f2l-detail{
+    overflow:hidden;border:1px solid var(--line);border-radius:var(--radius-card);
+    background:
+      radial-gradient(circle at 8% 0%, rgba(13,122,66,.075), transparent 25rem),
+      radial-gradient(circle at 96% 18%, rgba(47,111,208,.06), transparent 24rem),
+      rgba(252,252,248,.88);
+    box-shadow:0 1px 0 rgba(255,255,255,.9) inset;
   }
-  .dialog-shell > div:focus,
-  .dialog-shell:focus{outline:none}
-  .f2l-modal{
-    width:100%;max-width:none;height:100%;max-height:none;margin:0;padding:0;
-    border:0;background:transparent;color:inherit;overflow:hidden;
-    position:fixed;inset:0;
+  .detail-head{
+    display:flex;align-items:flex-start;justify-content:space-between;gap:18px;
+    padding-bottom:18px;border-bottom:1px solid var(--line);
   }
-  .f2l-modal[open]{display:grid;place-items:center}
-  .f2l-modal > .dialog-shell{grid-area:1/1}
-  .dialog-backdrop{
-    grid-area:1/1;place-self:stretch;display:grid;z-index:-1;
-    opacity:0;pointer-events:none;
+  .detail-back{
+    display:inline-flex;align-items:center;gap:7px;
+    min-height:34px;padding:0 13px;border:1px solid var(--line);border-radius:999px;
+    background:rgba(255,255,255,.62);color:var(--ink-soft);
+    font-size:11.5px;font-weight:650;transition:background .15s ease,border-color .15s ease;
   }
-  .f2l-modal::backdrop{background:rgba(17,23,19,.42)}
-  .f2l-modal[open] .dialog-shell{
-    animation:modal-in .2s cubic-bezier(.22,.8,.35,1);
+  .detail-back:hover{background:#fff;border-color:var(--line-strong);color:var(--color-base-content)}
+  .detail-head-copy{margin-top:14px}
+  .detail-title{font-size:clamp(27px,3.5vw,38px);line-height:1.08}
+  .detail-case-line{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .detail-case-pill{
+    display:inline-flex;align-items:center;min-height:24px;padding:0 9px;
+    border-radius:999px;background:var(--color-neutral);color:var(--color-neutral-content);
+    font:600 9.5px/1 ui-monospace,Menlo,monospace;letter-spacing:.1em;
   }
-  .dialog-stage{min-height:320px}
-  .dialog-layout{min-height:0}
-  .dialog-side{display:flex;min-width:0;flex-direction:column;gap:10px}
-  .dialog-scroll{
-    flex:1 1 auto;min-height:0;overflow-y:auto;
-    overscroll-behavior:contain;padding-right:2px;
+  .detail-case-group{
+    display:inline-flex;align-items:center;min-height:24px;padding:0 9px;
+    border-radius:999px;background:var(--color-base-200);color:var(--ink-soft);
+    font-size:10px;font-weight:650;
   }
-  .dialog-player{
-    flex:none;background:rgba(252,252,248,.96);padding:10px;
-    box-shadow:0 -8px 24px rgba(17,23,19,.045);
+  .detail-head-actions{display:flex;align-items:center;gap:6px;flex:none}
+  .detail-nav-btn{
+    display:grid;place-items:center;width:36px;height:36px;
+    border:1px solid var(--line);border-radius:999px;background:rgba(255,255,255,.62);
+    color:var(--color-base-content);transition:background .15s ease,border-color .15s ease;
   }
-  .dialog-player [data-role="tokens"]{min-height:24px}
-  .dialog-player [data-role="phase-hint"]{
-    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
-    overflow:hidden;min-height:0;
+  .detail-nav-btn:hover{background:#fff;border-color:var(--line-strong)}
+  .detail-layout{display:grid;gap:16px;align-items:start;padding-top:18px}
+  .detail-stage-column{min-width:0}
+  .detail-stage-shell{position:sticky;top:14px;overflow:hidden}
+  .detail-stage{min-height:clamp(330px,44vw,510px)}
+  .detail-stage-meta{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    position:absolute;z-index:3;inset:auto 14px 14px 14px;pointer-events:none;
+  }
+  .detail-stage-meta .stage-chip{pointer-events:auto}
+  .detail-stage-note{padding:9px 14px 0;font-size:10.5px;line-height:1.55;color:var(--ink-soft)}
+  .detail-side{display:flex;min-width:0;flex-direction:column;gap:12px}
+  .detail-token-list{display:flex;min-height:30px;flex-wrap:wrap;gap:5px}
+  .detail-player{
+    padding:12px;background:rgba(252,252,248,.98);
+    box-shadow:0 12px 32px rgba(17,23,19,.07);
+  }
+  .detail-player .tok{padding:5px 8px;font-size:11px}
+  .detail-player .kbd{height:1.35rem;min-height:1.35rem;font-size:9px}
+  .detail-player [data-role="tokens"]{min-height:28px}
+  .detail-player [data-role="phase-hint"]{min-height:38px}
+  .detail-alg{
+    display:block;margin-top:10px;padding:10px 12px;border:1px solid var(--line);
+    border-radius:14px;background:rgba(240,241,235,.72);
+    color:var(--color-base-content);font:600 12px/1.5 ui-monospace,Menlo,monospace;
+    letter-spacing:.04em;overflow-wrap:anywhere;
   }
   @media (max-width:1023px){
     .f2l-guide-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -360,44 +391,38 @@
   }
   @media (max-width:767px){
     .f2l-guide-grid{grid-template-columns:minmax(0,1fr)}
-    .dialog-title{font-size:22px}
-    #f2lDialog[open]{place-items:stretch}
-    .dialog-shell{
-      width:100%;max-width:100%;height:100dvh;border:0;border-radius:0;
-      grid-template-rows:minmax(0,1fr);
-    }
-    .dialog-shell > div{
-      padding:calc(10px + env(safe-area-inset-top)) 14px
-        calc(16px + env(safe-area-inset-bottom));
-      overflow-y:auto;-webkit-overflow-scrolling:touch;
-    }
-    .dialog-head{flex:none}
-    .dialog-layout{
-      display:flex;flex:none;flex-direction:column;gap:12px;
-      overflow:visible;padding-bottom:0;
-    }
-    .dialog-layout > .stage-shell{flex:none;height:clamp(190px,27dvh,240px);min-height:0}
-    .dialog-side{display:flex;flex:none;min-height:0;overflow:visible;gap:8px}
-    .dialog-scroll{
-      display:flex;flex:none;overflow:visible;padding-right:0;
-    }
-    .dialog-player{
-      position:relative;inset:auto;z-index:auto;border:1px solid var(--line);
-      background:rgba(252,252,248,.97);padding-top:8px;
-      box-shadow:0 10px 26px rgba(17,23,19,.055);
-    }
-    .dialog-side .teach-block{padding:10px 12px}
-    .dialog-side .teach-copy{font-size:10.5px;line-height:1.55}
-    .dialog-side .teach-block.mt-2{margin-top:6px}
-    .dialog-side .phase-card{padding:7px 8px}
-    .dialog-side .phase-card span{font-size:10px}
-    .dialog-side .teach-label{font-size:9px}
-    .dialog-player .tok{padding:4px 7px;font-size:10px}
-    .dialog-player [data-role="phase-hint"]{
+    .f2l-detail{border-radius:1.25rem}
+    .detail-head{flex-direction:column;gap:12px;padding-bottom:14px}
+    .detail-head-copy{margin-top:12px}
+    .detail-head-actions{width:100%;justify-content:flex-end}
+    .detail-layout{display:flex;flex-direction:column;align-items:stretch;padding-top:14px;gap:12px}
+    .detail-stage-column,.detail-side,.detail-player{width:100%;flex:none}
+    .detail-stage-shell{position:relative;top:auto}
+    .detail-stage{min-height:clamp(230px,35dvh,310px)}
+    .detail-stage-note{font-size:10px}
+    .detail-player{position:sticky;z-index:8;bottom:calc(8px + env(safe-area-inset-bottom));margin:0 -2px}
+    .detail-side .teach-block{padding:10px 12px}
+    .detail-side .teach-copy{font-size:10.5px;line-height:1.6}
+    .detail-side .teach-block.mt-2{margin-top:6px}
+    .detail-side .phase-card{padding:8px}
+    .detail-side .phase-card span{font-size:10px}
+    .detail-side .teach-label{font-size:9px}
+    .detail-player .tok{padding:4px 7px;font-size:10px}
+    .detail-player [data-role="phase-hint"]{
       display:block;min-height:0;padding:7px 10px;
-      white-space:nowrap;text-overflow:ellipsis;
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
     }
-    .dialog-shell > div > p:last-child{display:block;margin-top:10px;padding:0 4px 4px}
+    .detail-keyboard-hint{display:none}
+  }
+  @media (min-width:900px){
+    .detail-layout{
+      grid-template-areas:"stage side" "player side";
+      grid-template-columns:minmax(0,1.18fr) minmax(300px,.82fr);
+      grid-template-rows:auto 1fr;gap:16px 20px;
+    }
+    .detail-stage-column{grid-area:stage}
+    .detail-side{grid-area:side}
+    .detail-player{grid-area:player}
   }
   .f2l-section{
     border:1px solid var(--line);border-radius:var(--radius-card);
@@ -406,7 +431,6 @@
       rgba(252,252,248,.78);
     box-shadow:0 1px 0 rgba(255,255,255,.9) inset;
   }
-  @keyframes modal-in{from{opacity:0;transform:translateY(12px) scale(.985)}to{opacity:1;transform:none}}
   @media (min-width:960px){
     .stage-hints{display:flex}
   }
@@ -417,7 +441,6 @@
   }
   @media (prefers-reduced-motion:reduce){
     .net-btn,.case-card,.case-card::after,.mode-btn,.btn,.phase-card{transition:none}
-    .f2l-modal[open] .dialog-shell{animation:none}
   }
 </style>
 </head>
@@ -618,24 +641,19 @@
         </div>
         <div class="flex items-center gap-3 pr-1 text-[11px] text-[var(--ink-soft)]">
           <span id="f2lDone" class="mono hidden sm:inline">已练 0</span>
-          <span>点击卡片打开演示</span>
+          <span>点击卡片看完整讲解</span>
           <span id="f2lCount" class="mono">41 / 41</span>
         </div>
       </div>
       <div id="f2lList" class="grid grid-cols-2 content-start gap-3 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5"></div>
       <p id="f2lEmpty" class="py-6 text-center text-[12px] opacity-45" hidden>这个分类下没有 case。</p>
     </section>
+
+    <section id="workspaceF2LDetail" class="f2l-detail hidden p-4 lg:p-6" aria-live="polite">
+      <div id="f2lDetailBody"></div>
+    </section>
   </main>
 </div>
-
-<dialog id="f2lDialog" class="f2l-modal">
-  <div id="f2lSheet" class="dialog-shell">
-    <div class="flex min-h-0 flex-col p-4 sm:p-5"></div>
-  </div>
-  <form method="dialog" class="dialog-backdrop">
-    <button id="f2lClose" aria-label="关闭">关闭</button>
-  </form>
-</dialog>
 
 <script type="importmap">
 {

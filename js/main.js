@@ -11,7 +11,11 @@
   const { CASES, GROUPS } = window.RubikF2L;
   const { renderCases } = window.RubikThumbnails;
   const CubeView = window.RubikCubeView;
-  const dialog = window.RubikDialog;
+  const detail = window.RubikF2LDetail;
+  if (!detail) {
+    console.error('RubikF2LDetail 未加载，F2L 详情页不可用。');
+    return;
+  }
 
   const canvas = document.getElementById('stage');
   const view = new CubeView(canvas, { interactive: true });
@@ -37,6 +41,7 @@
   const modeF2LBtn = document.getElementById('modeF2L');
   const workspacePlay = document.getElementById('workspacePlay');
   const workspaceF2L = document.getElementById('workspaceF2L');
+  const workspaceF2LDetail = document.getElementById('workspaceF2LDetail');
 
   function renderLog() {
     logEl.innerHTML = '';
@@ -143,7 +148,7 @@
   });
 
   window.addEventListener('keydown', (event) => {
-    if (dialog.isOpen()) return;
+    if (detail.isActive()) return;
     if (event.metaKey || event.ctrlKey || event.altKey) return;
     if (event.target.closest('input, select, textarea')) return;
     const key = event.key.toUpperCase();
@@ -210,29 +215,28 @@
     lookButton.textContent = nowBelow ? '回到俯视' : '转到下方看绿面';
   });
 
-  function setWorkspace(next) {
+  function renderWorkspace(next) {
     const isF2L = next === 'f2l';
-    workspacePlay.classList.toggle('hidden', isF2L);
+    const isDetail = next === 'detail';
+    workspacePlay.classList.toggle('hidden', isF2L || isDetail);
     workspaceF2L.classList.toggle('hidden', !isF2L);
-    modePlayBtn.classList.toggle('is-active', !isF2L);
-    modeF2LBtn.classList.toggle('is-active', isF2L);
-    modePlayBtn.setAttribute('aria-pressed', String(!isF2L));
-    modeF2LBtn.setAttribute('aria-pressed', String(isF2L));
-    if (isF2L) {
-      history.replaceState(null, '', '#f2l');
-      view.setInteractive(false);
-    } else {
-      history.replaceState(null, '', location.pathname + location.search);
-      view.setInteractive(true);
-      view.resize();
-    }
+    workspaceF2LDetail.classList.toggle('hidden', !isDetail);
+    modePlayBtn.classList.toggle('is-active', !isF2L && !isDetail);
+    modeF2LBtn.classList.toggle('is-active', isF2L || isDetail);
+    modePlayBtn.setAttribute('aria-pressed', String(!isF2L && !isDetail));
+    modeF2LBtn.setAttribute('aria-pressed', String(isF2L || isDetail));
+    view.setInteractive(!isF2L && !isDetail);
+    if (!isF2L && !isDetail) requestAnimationFrame(() => view.resize());
   }
 
-  modePlayBtn.addEventListener('click', () => setWorkspace('play'));
-  modeF2LBtn.addEventListener('click', () => setWorkspace('f2l'));
+  modePlayBtn.addEventListener('click', () => {
+    window.RubikRouter.navigate('');
+  });
+  modeF2LBtn.addEventListener('click', () => {
+    window.RubikRouter.navigate('#f2l');
+  });
   document.getElementById('openF2L').addEventListener('click', () => {
-    setWorkspace('f2l');
-    window.scrollTo({ top: 0, behavior: view.reduceMotion ? 'auto' : 'smooth' });
+    window.RubikRouter.navigate('#f2l');
   });
 
   let drag = null;
@@ -294,7 +298,7 @@
   canvas.addEventListener(
     'pointerdown',
     (event) => {
-      if (animating || dialog.isOpen()) return;
+      if (animating || detail.isActive()) return;
       if (event.pointerType === 'mouse' && event.button !== 0) return;
       const hit = view.pick(event.clientX, event.clientY);
       if (!hit) return;
@@ -405,7 +409,9 @@
         'mt-1.5 line-clamp-2 px-0.5 text-[10.5px] leading-[1.55] text-[var(--ink-soft)]';
       prompt.textContent = item.teach.goal;
       button.append(done, art, alg, prompt, foot);
-      button.addEventListener('click', () => dialog.open(item));
+      button.addEventListener('click', () => {
+        window.RubikRouter.navigate('#f2l/' + item.n);
+      });
       listEl.appendChild(button);
     }
   }
@@ -430,7 +436,7 @@
         : CASES.filter((item) => item.group === activeGroup);
     if (!pool.length) return;
     const pick = pool[Math.floor(Math.random() * pool.length)];
-    dialog.open(pick);
+    window.RubikRouter.navigate('#f2l/' + pick.n);
   });
 
   document.querySelector('.f2l-guide summary')?.addEventListener('click', (event) => {
@@ -459,5 +465,60 @@
   }
   renderCaseList();
   setDirection(false);
-  setWorkspace(location.hash === '#f2l' ? 'f2l' : 'play');
+
+  function parseRoute() {
+    const match = location.hash.match(/^#f2l\/(\d+)$/);
+    if (match) {
+      const caseData = CASES.find((item) => item.n === Number(match[1]));
+      return caseData ? { view: 'detail', caseData } : { view: 'f2l' };
+    }
+    return location.hash === '#f2l' ? { view: 'f2l' } : { view: 'play' };
+  }
+
+  let lastView = null;
+  function route() {
+    const routeState = parseRoute();
+    const leavingDetail = lastView === 'detail' && routeState.view !== 'detail';
+    const previousCase = leavingDetail ? detail.currentCase() : null;
+
+    if (routeState.view !== 'detail') detail.hide();
+    renderWorkspace(routeState.view);
+    if (routeState.view === 'detail') detail.show(routeState.caseData);
+
+    if (routeState.view === 'play') {
+      window.scrollTo({ top: 0, behavior: 'auto' });
+    } else if (routeState.view === 'f2l') {
+      if (leavingDetail) {
+        const card = listEl.querySelector('[data-case="' + previousCase?.n + '"]');
+        requestAnimationFrame(() => {
+          card?.scrollIntoView({ block: 'center', behavior: 'auto' });
+        });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'auto' });
+      }
+    }
+
+    lastView = routeState.view;
+  }
+
+  window.RubikRouter = {
+    navigate(hash) {
+      const target = hash || location.pathname + location.search;
+      if (hash && location.hash === hash) {
+        route();
+        return;
+      }
+      if (!hash) {
+        history.pushState(null, '', target);
+        route();
+        return;
+      }
+      location.hash = hash;
+    },
+    route,
+  };
+
+  window.addEventListener('hashchange', route);
+  window.addEventListener('popstate', route);
+  route();
 })();

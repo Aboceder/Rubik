@@ -13,5 +13,5 @@ await import('./state.js');
 await import('./f2l-cases.js');
 await import('./cube-view.js');
 await import('./cube-thumbnails.js');
-await import('./f2l-dialog.js');
+await import('./f2l-detail.js');
 await import('./main.js');

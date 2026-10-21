@@ -328,6 +328,35 @@
       });
     }
 
+    async animateRotation(axis, angle, duration) {
+      const ms = duration === undefined ? this.turnMs : duration;
+      if (ms <= 1) return;
+      const vector = new THREE.Vector3(axis[0], axis[1], axis[2]);
+      const target = new THREE.Quaternion().setFromAxisAngle(vector, angle);
+      const startQuaternion = this.cubeGroup.quaternion.clone();
+      const endQuaternion = target.multiply(startQuaternion);
+      const start = performance.now();
+
+      await new Promise((resolve) => {
+        const step = (now) => {
+          const t = Math.min(1, (now - start) / ms);
+          const eased = 1 - Math.pow(1 - t, 3);
+          this.cubeGroup.quaternion.slerpQuaternions(
+            startQuaternion,
+            endQuaternion,
+            eased,
+          );
+          this.cubeGroup.updateMatrixWorld(true);
+          if (t < 1) requestAnimationFrame(step);
+          else {
+            this.cubeGroup.quaternion.copy(endQuaternion);
+            resolve();
+          }
+        };
+        requestAnimationFrame(step);
+      });
+    }
+
     flyTo(target, duration) {
       if (this.flying) return;
       this.flying = true;
