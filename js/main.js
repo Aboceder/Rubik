@@ -36,10 +36,17 @@
   const workspaceF2L = document.getElementById('workspaceF2L');
   const workspaceF2LDetail = document.getElementById('workspaceF2LDetail');
 
+  const actionButtons = [scrambleButton, resetButton, practiceButton];
+
+  function syncActionButtons() {
+    for (const button of actionButtons) button.disabled = animating;
+  }
+
   function refreshStatus() {
     moveCountEl.textContent = moveCount;
     if (stateText.dataset.mode === 'practice') {
-      stateText.textContent = 'F2L 练习';
+      const caseNumber = stateText.dataset.case;
+      stateText.textContent = 'F2L 练习 · Case ' + caseNumber;
       stateBadge.classList.remove('is-solved', 'is-scrambled');
       return;
     }
@@ -55,6 +62,7 @@
 
   async function runMove(move) {
     animating = true;
+    syncActionButtons();
     if (move.rotation) {
       await view.animateTurn(move.axis, [-1, 0, 1], move.angle, move.duration);
     } else {
@@ -72,6 +80,7 @@
     state = result.state;
     syncView();
     animating = false;
+    syncActionButtons();
     if (!move.silent) moveCount += 1;
     refreshStatus();
   }
@@ -100,6 +109,7 @@
 
   window.addEventListener('keydown', (event) => {
     if (detail.isActive()) return;
+    if (document.documentElement.dataset.view !== 'play') return;
     if (event.metaKey || event.ctrlKey || event.altKey) return;
     if (event.target.closest('input, select, textarea')) return;
     const key = event.key.toUpperCase();
@@ -118,6 +128,7 @@
   scrambleButton.addEventListener('click', () => {
     if (animating) return;
     delete stateText.dataset.mode;
+    delete stateText.dataset.case;
     const keys = Object.keys(FACES);
     let last = '';
     for (let i = 0; i < 22; i++) {
@@ -142,6 +153,7 @@
     chain = chain.then(() => {
       state = createSolvedState();
       delete stateText.dataset.mode;
+      delete stateText.dataset.case;
       moveCount = 0;
       syncView();
       refreshStatus();
@@ -164,6 +176,7 @@
       }));
       moveCount = 0;
       stateText.dataset.mode = 'practice';
+      stateText.dataset.case = String(practiceCase.n);
       stateBadge.classList.remove('is-solved', 'is-scrambled');
       syncView();
       refreshStatus();
@@ -261,6 +274,8 @@
           lastX: event.clientX,
           lastY: event.clientY,
         };
+        suppressOrbit = true;
+        view.controls.enabled = false;
         try {
           canvas.setPointerCapture(event.pointerId);
         } catch {
