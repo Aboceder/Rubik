@@ -80,14 +80,12 @@
   button:focus:not(:focus-visible){outline:none!important;box-shadow:none}
   .btn:focus:not(:focus-visible),
   .filter-tab:focus:not(:focus-visible),
-  .net-btn:focus:not(:focus-visible),
   .mode-btn:focus:not(:focus-visible),
   .phase-card:focus:not(:focus-visible),
   .f2l-guide summary:focus:not(:focus-visible){outline:none!important}
   .modal-box:focus{outline:none!important}
   .btn:focus-visible,
   .filter-tab:focus-visible,
-  .net-btn:focus-visible,
   .mode-btn:focus-visible,
   .case-card:focus-visible,
   .tok:focus-visible,
@@ -151,65 +149,11 @@
   }
   .axis-legend span{display:flex;align-items:center;gap:4px;font:600 9px/1 ui-monospace,Menlo,monospace;color:var(--ink-soft)}
   .axis-legend i{width:6px;height:6px;border-radius:2px}
-  .control-rail{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;min-width:0}
-  @media (max-width:1023px){
-    .control-rail{grid-template-columns:minmax(0,1.45fr) minmax(220px,1fr);align-items:start}
-    .control-rail > .panel:nth-child(2){grid-row:span 2}
-  }
-  @media (max-width:680px){
-    .control-rail{grid-template-columns:minmax(0,1fr)}
-  }
   .panel{
     border:1px solid var(--line);border-radius:var(--radius-box);
     background:rgba(252,252,248,.86);
     box-shadow:0 1px 0 rgba(255,255,255,.9) inset,0 10px 28px rgba(17,23,19,.035);
   }
-  .panel-head{
-    display:flex;align-items:center;justify-content:space-between;gap:12px;
-    margin-bottom:14px;
-  }
-  .panel-kicker{
-    font:600 10px/1 ui-monospace,Menlo,monospace;letter-spacing:.16em;
-    color:var(--ink-soft);text-transform:uppercase;
-  }
-  .segmented{
-    display:flex;gap:2px;padding:3px;border-radius:var(--radius-pill);background:var(--color-base-200);
-  }
-  .segmented .btn{
-    min-height:27px;height:27px;padding:0 11px;border:0;border-radius:var(--radius-pill);
-    background:transparent;box-shadow:none;font-size:10.5px;color:var(--ink-soft);
-  }
-  .segmented .btn:hover{background:rgba(255,255,255,.55);color:var(--color-base-content)}
-  .segmented .btn.btn-neutral{background:var(--color-neutral);color:var(--color-neutral-content);box-shadow:0 2px 6px rgba(17,23,19,.12)}
-  .net-btn{
-    position:relative;
-    display:grid;place-items:center;
-    aspect-ratio:1;
-    min-height:0;
-    border-radius:1rem;
-    border:1px solid var(--line);
-    background:linear-gradient(180deg,#fff 0,#fafaf5 100%);
-    font:700 15px/1 ui-monospace,Menlo,monospace;
-    letter-spacing:.04em;
-    box-shadow:0 1px 0 rgba(255,255,255,.9) inset,0 3px 10px rgba(17,23,19,.035);
-    transition:transform .12s ease,box-shadow .12s ease,border-color .12s ease;
-  }
-  .net-btn:hover{border-color:var(--line-strong);transform:translateY(-1px);box-shadow:0 8px 20px rgba(17,23,19,.08)}
-  .turn-net > .net-btn{max-height:84px}
-  .net-btn:active{transform:translateY(1px)}
-  .net-btn:focus-visible{outline:2px solid var(--color-primary);outline-offset:2px}
-  .net-btn .swatch{
-    position:absolute;left:50%;bottom:7px;transform:translateX(-50%);
-    width:20px;height:3px;border-radius:999px;
-  }
-  .net-btn .cap{position:absolute;left:8px;top:6px;font:600 8px/1 ui-monospace,Menlo,monospace;opacity:.36;letter-spacing:.08em}
-  .log{display:flex;flex-wrap:wrap;gap:4px;min-height:26px}
-  .log span{
-    font-family:ui-monospace,Menlo,monospace;font-size:11.5px;line-height:1;
-    padding:5px 8px;border-radius:var(--radius-pill);
-    background:var(--color-base-200);color:var(--color-base-content);
-  }
-  .log span.is-last{background:var(--color-neutral);color:var(--color-neutral-content)}
   .tok{
     display:inline-flex;align-items:center;justify-content:center;
     min-width:28px;text-align:center;
@@ -443,7 +387,7 @@
     .axis-legend{display:none}
   }
   @media (prefers-reduced-motion:reduce){
-    .net-btn,.case-card,.case-card::after,.mode-btn,.btn,.phase-card{transition:none}
+    .case-card,.case-card::after,.mode-btn,.btn,.phase-card{transition:none}
   }
 </style>
 </head>
@@ -478,9 +422,9 @@
   </header>
 
   <main class="flex-1">
-    <div id="workspacePlay" class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_328px] lg:gap-5">
+    <div id="workspacePlay">
 
-    <section class="stage-shell min-h-[61vh] lg:min-h-[calc(100dvh-152px)]">
+    <section class="stage-shell min-h-[61vh] lg:min-h-[calc(100dvh-142px)]">
       <canvas id="stage" aria-label="可拧动的三阶魔方，绿色面在下方"></canvas>
 
       <div class="stage-topbar">
@@ -510,72 +454,6 @@
       </div>
     </section>
 
-    <aside class="control-rail">
-
-      <div class="panel p-4">
-        <div class="panel-head">
-          <div>
-            <p class="panel-kicker">Turn control</p>
-            <h2 class="mt-1 text-[15px] font-bold tracking-tight">转动</h2>
-          </div>
-          <div class="segmented" role="group" aria-label="转动方向">
-            <button id="dirCW" class="btn btn-xs btn-neutral" aria-pressed="true">顺时针</button>
-            <button id="dirCCW" class="btn btn-xs" aria-pressed="false">逆时针</button>
-          </div>
-        </div>
-
-        <div class="turn-net grid grid-cols-4 gap-2 sm:grid-cols-6 lg:grid-cols-4">
-          <button class="net-btn col-start-2 row-start-1" data-face="U" aria-label="上层 U 面">
-            <span class="cap">U</span>U<span class="swatch" style="background:#2f6fd0"></span>
-          </button>
-          <button class="net-btn col-start-1 row-start-2" data-face="L" aria-label="左层 L 面">
-            <span class="cap">L</span>L<span class="swatch" style="background:#f07a2b"></span>
-          </button>
-          <button class="net-btn col-start-2 row-start-2" data-face="F" aria-label="前层 F 面">
-            <span class="cap">F</span>F<span class="swatch" style="background:#e7e9e6"></span>
-          </button>
-          <button class="net-btn col-start-3 row-start-2" data-face="R" aria-label="右层 R 面">
-            <span class="cap">R</span>R<span class="swatch" style="background:#d8322c"></span>
-          </button>
-          <button class="net-btn col-start-4 row-start-2" data-face="B" aria-label="后层 B 面">
-            <span class="cap">B</span>B<span class="swatch" style="background:#f5c518"></span>
-          </button>
-          <button class="net-btn col-start-2 row-start-3" data-face="D" aria-label="底层 D 面（绿色）">
-            <span class="cap">D</span>D<span class="swatch" style="background:#1f9d55"></span>
-          </button>
-        </div>
-        <p class="mt-4 border-t border-[var(--line)] pt-3 text-[11px] leading-relaxed text-[var(--ink-soft)]">
-          键盘 <kbd class="kbd kbd-xs">U</kbd> <kbd class="kbd kbd-xs">D</kbd> <kbd class="kbd kbd-xs">L</kbd>
-          <kbd class="kbd kbd-xs">R</kbd> <kbd class="kbd kbd-xs">F</kbd> <kbd class="kbd kbd-xs">B</kbd>，
-          加 <kbd class="kbd kbd-xs">Shift</kbd> 反向。
-        </p>
-      </div>
-
-      <div class="panel p-4">
-        <div class="panel-head !mb-3">
-          <div>
-            <p class="panel-kicker">Move log</p>
-            <h2 class="mt-1 text-[15px] font-bold tracking-tight">记录</h2>
-          </div>
-          <span class="mono text-[10px] text-[var(--ink-soft)]">最近 24 步</span>
-        </div>
-        <div id="log" class="log" aria-live="polite"></div>
-        <p id="logEmpty" class="py-1 text-[12px] text-[var(--ink-soft)]">还没有动作。</p>
-      </div>
-
-      <div class="panel flex flex-col gap-2 p-3">
-        <button id="scramble" class="btn btn-sm btn-neutral">打乱魔方</button>
-        <div class="grid grid-cols-2 gap-2">
-          <button id="undo" class="btn btn-sm" disabled>撤销</button>
-          <button id="reset" class="btn btn-sm">复原</button>
-        </div>
-        <button id="openF2L" class="btn btn-sm btn-ghost justify-between">
-          去练 F2L 公式
-          <span class="mono text-[10px] opacity-45">41 cases →</span>
-        </button>
-      </div>
-
-    </aside>
     </div>
 
     <section id="workspaceF2L" class="f2l-section hidden p-4 lg:p-6" aria-labelledby="f2l-title">

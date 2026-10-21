@@ -1,11 +1,8 @@
 (function () {
-  const { FACES, parseAlg, tokenAngle, describe } = window.RubikNotation;
+  const { FACES, describe } = window.RubikNotation;
   const {
     createSolvedState,
-    cloneState,
     applyTokens,
-    toLocalState,
-    findCubie,
     isSolved,
   } = window.RubikState;
   const { CASES, GROUPS } = window.RubikF2L;
@@ -24,18 +21,11 @@
 
   let chain = Promise.resolve();
   let animating = false;
-  let inverse = false;
-  let moveHistory = [];
   let moveCount = 0;
 
-  const logEl = document.getElementById('log');
-  const logEmptyEl = document.getElementById('logEmpty');
   const moveCountEl = document.getElementById('moveCount');
   const stateBadge = document.getElementById('stateBadge');
   const stateText = document.getElementById('stateText');
-  const undoBtn = document.getElementById('undo');
-  const dirCW = document.getElementById('dirCW');
-  const dirCCW = document.getElementById('dirCCW');
   const lookButton = document.getElementById('lookBottom');
   const modePlayBtn = document.getElementById('modePlay');
   const modeF2LBtn = document.getElementById('modeF2L');
@@ -43,21 +33,8 @@
   const workspaceF2L = document.getElementById('workspaceF2L');
   const workspaceF2LDetail = document.getElementById('workspaceF2LDetail');
 
-  function renderLog() {
-    logEl.innerHTML = '';
-    const shown = moveHistory.slice(-24);
-    shown.forEach((move, index) => {
-      const chip = document.createElement('span');
-      chip.textContent = move.label;
-      if (index === shown.length - 1) chip.className = 'is-last';
-      logEl.appendChild(chip);
-    });
-    logEmptyEl.hidden = moveHistory.length > 0;
-  }
-
   function refreshStatus() {
     moveCountEl.textContent = moveCount;
-    undoBtn.disabled = moveHistory.length === 0;
     const solved = isSolved(state);
     stateText.textContent = solved ? '已复原' : '已打乱';
     stateBadge.classList.toggle('is-solved', solved);
@@ -87,32 +64,13 @@
     state = result.state;
     syncView();
     animating = false;
-    if (!move.silent) {
-      moveHistory.push({ label: move.label, token: move });
-      moveCount += 1;
-      renderLog();
-    }
+    if (!move.silent) moveCount += 1;
     refreshStatus();
   }
 
   function queueMove(move) {
     chain = chain.then(() => runMove(move));
     return chain;
-  }
-
-  function queueToken(token, options) {
-    const opts = options || {};
-    return queueMove({
-      base: token.base,
-      amount: token.amount,
-      axis: token.axis,
-      layers: token.layers,
-      rotation: token.all,
-      angle: tokenAngle(token),
-      label: token.label,
-      silent: opts.silent,
-      duration: opts.duration,
-    });
   }
 
   function enqueueFaceTurn(faceKey, backwards, opts) {
@@ -132,21 +90,6 @@
     });
   }
 
-  function setDirection(backwards) {
-    inverse = backwards;
-    dirCW.className = backwards ? 'btn join-item btn-xs' : 'btn join-item btn-xs btn-neutral';
-    dirCCW.className = backwards ? 'btn join-item btn-xs btn-neutral' : 'btn join-item btn-xs';
-    dirCW.setAttribute('aria-pressed', String(!backwards));
-    dirCCW.setAttribute('aria-pressed', String(backwards));
-  }
-
-  dirCW.addEventListener('click', () => setDirection(false));
-  dirCCW.addEventListener('click', () => setDirection(true));
-
-  document.querySelectorAll('.net-btn').forEach((button) => {
-    button.addEventListener('click', () => enqueueFaceTurn(button.dataset.face, inverse));
-  });
-
   window.addEventListener('keydown', (event) => {
     if (detail.isActive()) return;
     if (event.metaKey || event.ctrlKey || event.altKey) return;
@@ -158,56 +101,6 @@
       return;
     }
     if (event.key === ' ') event.preventDefault();
-  });
-
-  document.getElementById('scramble').addEventListener('click', () => {
-    if (animating) return;
-    const keys = Object.keys(FACES);
-    let last = '';
-    for (let i = 0; i < 22; i++) {
-      let key;
-      do {
-        key = keys[Math.floor(Math.random() * keys.length)];
-      } while (key === last);
-      last = key;
-      enqueueFaceTurn(key, Math.random() < 0.5, {
-        silent: true,
-        duration: view.reduceMotion ? 1 : 80,
-      });
-    }
-    chain = chain.then(() => {
-      moveHistory = [];
-      moveCount = 0;
-      renderLog();
-      refreshStatus();
-    });
-  });
-
-  document.getElementById('reset').addEventListener('click', () => {
-    if (animating) return;
-    chain = chain.then(() => {
-      state = createSolvedState();
-      syncView();
-      moveHistory = [];
-      moveCount = 0;
-      renderLog();
-      refreshStatus();
-    });
-  });
-
-  document.getElementById('undo').addEventListener('click', () => {
-    if (animating || !moveHistory.length) return;
-    const last = moveHistory.pop();
-    moveCount = Math.max(0, moveCount - 1);
-    queueToken(
-      {
-        ...last.token,
-        amount: -last.token.amount,
-        label: last.token.label,
-      },
-      { silent: true },
-    );
-    renderLog();
   });
 
   lookButton.addEventListener('click', () => {
@@ -233,9 +126,6 @@
     window.RubikRouter.navigate('');
   });
   modeF2LBtn.addEventListener('click', () => {
-    window.RubikRouter.navigate('#f2l');
-  });
-  document.getElementById('openF2L').addEventListener('click', () => {
     window.RubikRouter.navigate('#f2l');
   });
 
@@ -452,7 +342,6 @@
     if (badge) badge.hidden = false;
   });
 
-  renderLog();
   refreshStatus();
   thumbnails = renderCases(CASES);
   for (const [group, count] of Object.entries(
@@ -464,7 +353,6 @@
     document.querySelector(`[data-count="${group}"]`).textContent = String(count);
   }
   renderCaseList();
-  setDirection(false);
 
   function parseRoute() {
     const match = location.hash.match(/^#f2l\/(\d+)$/);
