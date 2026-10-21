@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-CN" data-theme="light">
+<html lang="zh-CN" data-theme="light" data-view="play">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -388,6 +388,21 @@
     .stage-hints{display:flex}
   }
   @media (max-width:640px){
+    html[data-view="play"],html[data-view="play"] body{
+      height:100%;max-height:100dvh;overflow:hidden;overscroll-behavior:none;
+    }
+    html[data-view="play"] .app-shell{
+      height:100dvh;min-height:0;
+      padding-bottom:calc(12px + env(safe-area-inset-bottom));
+    }
+    html[data-view="play"] .app-header,
+    html[data-view="play"] .mode-switch{flex:none}
+    html[data-view="play"] main{display:flex;min-height:0}
+    html[data-view="play"] #workspacePlay{flex:1;min-height:0}
+    html[data-view="play"] .play-stage{
+      height:100%;min-height:0;border-radius:0;
+    }
+    .stage-status{display:none}
     .stage-topbar{inset:12px 12px auto 12px}
     .stage-bottom{inset:auto 12px 12px 12px}
     .stage-actions{gap:4px;flex-wrap:nowrap}
@@ -401,7 +416,7 @@
 </head>
 <body>
 
-<div class="mx-auto flex min-h-dvh max-w-[1320px] flex-col gap-5 p-4 lg:gap-6 lg:p-6">
+<div class="app-shell mx-auto flex min-h-dvh max-w-[1320px] flex-col gap-5 p-4 lg:gap-6 lg:p-6">
 
   <header class="app-header flex flex-wrap items-center justify-between gap-4 px-1 py-1">
     <div class="flex items-center gap-3">
@@ -436,7 +451,7 @@
       <canvas id="stage" aria-label="可拧动的三阶魔方，绿色面在下方"></canvas>
 
       <div class="stage-topbar">
-        <div class="flex flex-col items-start gap-2">
+        <div class="stage-status flex flex-col items-start gap-2">
           <span id="stateBadge" class="stage-chip">
             <span class="inline-block size-2 rounded-full bg-[var(--color-success)]"></span>
             <span id="stateText">已复原</span>

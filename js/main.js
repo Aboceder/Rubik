@@ -173,6 +173,7 @@
   function renderWorkspace(next) {
     const isF2L = next === 'f2l';
     const isDetail = next === 'detail';
+    document.documentElement.dataset.view = next;
     workspacePlay.classList.toggle('hidden', isF2L || isDetail);
     workspaceF2L.classList.toggle('hidden', !isF2L);
     workspaceF2LDetail.classList.toggle('hidden', !isDetail);

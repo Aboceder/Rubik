@@ -6,6 +6,10 @@
 
   const Z_POS = new THREE.Vector3(0, 0, 1);
   const SIZE = 240;
+  const TARGET_HOMES = new Set([
+    '1,1,0', // 红蓝棱
+    '1,-1,1', // 绿红白角
+  ]);
 
   function roundedRectShape(size, radius) {
     const h = size / 2;
@@ -80,6 +84,13 @@
       roughness: 0.5,
       metalness: 0.18,
     });
+    const targetBodyMaterial = new THREE.MeshStandardMaterial({
+      color: 0x26332b,
+      roughness: 0.44,
+      metalness: 0.12,
+      emissive: 0x0d7a42,
+      emissiveIntensity: 0.09,
+    });
     const stickerGeometry = new THREE.ExtrudeGeometry(
       roundedRectShape(0.8, 0.115),
       {
@@ -94,6 +105,11 @@
     stickerGeometry.center();
 
     const stickerMaterials = {};
+    const mutedStickerMaterial = new THREE.MeshStandardMaterial({
+      color: 0xd0d4d1,
+      roughness: 0.72,
+      metalness: 0,
+    });
     for (const [key, face] of Object.entries(FACES)) {
       stickerMaterials[key] = new THREE.MeshStandardMaterial({
         color: face.color,
@@ -109,19 +125,33 @@
           if (x === 0 && y === 0 && z === 0) continue;
           const cubie = new THREE.Group();
           cubie.userData.home = [x, y, z];
-          cubie.add(new THREE.Mesh(bodyGeometry, bodyMaterial));
+          const homeKey = [x, y, z].join(',');
+          const isTarget = TARGET_HOMES.has(homeKey);
+          cubie.add(
+            new THREE.Mesh(
+              bodyGeometry,
+              isTarget ? targetBodyMaterial : bodyMaterial,
+            ),
+          );
+          if (isTarget) {
+            cubie.scale.setScalar(1.025);
+          }
 
           for (const [key, face] of Object.entries(FACES)) {
             const axis = new THREE.Vector3(face.axis[0], face.axis[1], face.axis[2]);
             if (axis.dot(new THREE.Vector3(x, y, z)) !== 1) continue;
-            const sticker = new THREE.Mesh(stickerGeometry, stickerMaterials[key]);
+            const isTargetSticker = isTarget && key !== 'U';
+            const sticker = new THREE.Mesh(
+              stickerGeometry,
+              isTargetSticker ? stickerMaterials[key] : mutedStickerMaterial,
+            );
             sticker.position.copy(axis).multiplyScalar(0.482);
             sticker.quaternion.setFromUnitVectors(Z_POS, axis);
             cubie.add(sticker);
           }
 
           group.add(cubie);
-          cubies.set([x, y, z].join(','), cubie);
+          cubies.set(homeKey, cubie);
         }
       }
     }
