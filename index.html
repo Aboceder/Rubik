@@ -6,8 +6,8 @@
 <title>魔方方魔</title>
 <link rel="icon" href="assets/Rubik.png" type="image/png">
 <link rel="apple-touch-icon" href="assets/Rubik.png">
-<link href="https://cdn.jsdelivr.net/npm/daisyui@5" rel="stylesheet" type="text/css">
-<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+<link href="vendor/daisyui.css" rel="stylesheet" type="text/css">
+<script src="vendor/tailwind.js"></script>
 <style>
   :root{
     --color-base-100: #fcfcf8;
@@ -574,8 +574,8 @@
 <script type="importmap">
 {
   "imports": {
-    "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
-    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"
+    "three": "./vendor/three.module.js",
+    "three/addons/": "./vendor/three/addons/"
   }
 }
 </script>
