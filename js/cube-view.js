@@ -115,6 +115,8 @@
       this.controls.maxPolarAngle = Math.PI * 0.9;
       this.controls.rotateSpeed = 0.85;
       this.controls.zoomSpeed = 0.8;
+      this.controls.touches.ONE = THREE.TOUCH.ROTATE;
+      this.controls.touches.TWO = THREE.TOUCH.DOLLY_ROTATE;
       this.controls.target.set(0, 0, 0);
       this.controls.enabled = this.interactive;
       this.controls.update();
@@ -407,6 +409,22 @@
 
     isBelow() {
       return this.camera.position.y < 0;
+    }
+
+    orbitBy(dx, dy) {
+      const offset = this.camera.position.clone().sub(this.controls.target);
+      const spherical = new THREE.Spherical().setFromVector3(offset);
+      spherical.theta -= dx * 0.007;
+      spherical.phi = THREE.MathUtils.clamp(
+        spherical.phi - dy * 0.007,
+        this.controls.minPolarAngle,
+        this.controls.maxPolarAngle,
+      );
+      offset.setFromSpherical(spherical);
+      this.camera.position.copy(this.controls.target).add(offset);
+      this.camera.lookAt(this.controls.target);
+      this.controls.update();
+      this.invalidate();
     }
   }
 

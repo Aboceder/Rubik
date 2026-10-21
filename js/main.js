@@ -29,7 +29,6 @@
   const lookButton = document.getElementById('lookBottom');
   const scrambleButton = document.getElementById('scramble');
   const resetButton = document.getElementById('reset');
-  const touchModeButton = document.getElementById('touchMode');
   const modePlayBtn = document.getElementById('modePlay');
   const modeF2LBtn = document.getElementById('modeF2L');
   const workspacePlay = document.getElementById('workspacePlay');
@@ -169,7 +168,7 @@
 
   let drag = null;
   let suppressOrbit = false;
-  let touchTurnMode = false;
+  let orbitDrag = null;
   const AXES = [
     [1, 0, 0],
     [0, 1, 0],
@@ -229,9 +228,20 @@
     (event) => {
       if (animating || detail.isActive()) return;
       if (event.pointerType === 'mouse' && event.button !== 0) return;
-      if (event.pointerType !== 'mouse' && !touchTurnMode) return;
       const hit = view.pick(event.clientX, event.clientY);
-      if (!hit) return;
+      if (!hit) {
+        orbitDrag = {
+          id: event.pointerId,
+          lastX: event.clientX,
+          lastY: event.clientY,
+        };
+        try {
+          canvas.setPointerCapture(event.pointerId);
+        } catch {
+          /* ignore */
+        }
+        return;
+      }
       drag = {
         id: event.pointerId,
         startX: event.clientX,
@@ -255,6 +265,14 @@
   canvas.addEventListener(
     'pointermove',
     (event) => {
+      if (orbitDrag && event.pointerId === orbitDrag.id) {
+        const dx = event.clientX - orbitDrag.lastX;
+        const dy = event.clientY - orbitDrag.lastY;
+        orbitDrag.lastX = event.clientX;
+        orbitDrag.lastY = event.clientY;
+        view.orbitBy(dx, dy);
+        return;
+      }
       if (!drag || event.pointerId !== drag.id) return;
       const dx = event.clientX - drag.startX;
       const dy = event.clientY - drag.startY;
@@ -268,6 +286,7 @@
 
   function endDrag(event) {
     if (drag && event.pointerId === drag.id) drag = null;
+    if (orbitDrag && event.pointerId === orbitDrag.id) orbitDrag = null;
     canvas.classList.remove('grabbing');
     if (suppressOrbit) {
       suppressOrbit = false;
@@ -279,12 +298,6 @@
   canvas.addEventListener('pointercancel', endDrag, true);
   window.addEventListener('pointerup', endDrag);
   window.addEventListener('pointercancel', endDrag);
-
-  touchModeButton.addEventListener('click', () => {
-    touchTurnMode = !touchTurnMode;
-    touchModeButton.textContent = touchTurnMode ? '手势：拧层' : '手势：转视角';
-    touchModeButton.setAttribute('aria-pressed', String(touchTurnMode));
-  });
 
   const listEl = document.getElementById('f2lList');
   const emptyEl = document.getElementById('f2lEmpty');
